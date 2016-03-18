@@ -68,7 +68,7 @@ Actions
 2. If you still use non-clustered Zabbix Agent on any clusternode - be sure that its ListenIP not 0.0.0.0. Otherwise you can sometime get error 1067 while migrate clustered Zabbix Agent due its IP may be already used by local Zabbix Agent;
 3. Create copy of Zabbix Agent config for using with clustered Zabbix Agent (_zabbix\_agentd\_WSFC-A.conf_ for example); 
 4. Set Zabbix Agent's / Server's _Timeout_ to more that 3 sec (may be 10 or 30);
-5. Add to _zabbix\_agentd\_WSFC-A.conf_ this string: _UserParameter=wsfc[*], powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File C:\zabbix\scripts\wsfc.ps1 -Action "$1" -Object "$2" -Key "$3" -Id "$4"_ ;
+5. Add to _zabbix\_agentd\_WSFC-A.conf_ this string: _UserParameter=wsfc[*], powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File C:\zabbix\scripts\wsfc.ps1 -Action "$1" -Object "$2" -Key "$3" -Id "$4" -ErrorCode $5_ ;
 6. Use with _zabbix\_agentd\_WSFC-A.conf_ params: _Hostname=wsfc-a.mynet.local_ and _ListenIP=192.168.0.69_, where FDQN-hostname is name what you want use as host-record on Zabbix Server and IP-address is address that you plan to use on step 10;
 7. Put _wsfc.ps1_ to _C:\zabbix\scripts_ dir and _zabbix\_agentd\_WSFC-A.conf_ to _C:\zabbix_ dir on all cluster nodes. Also you can use Windows Share if you want; 
 8. Create new (double) Zabbix service on every node with command: _zabbix_agentd.exe -c c:\zabbix\zabbix\_agentd\_WSFC-A.conf -i **-m**_. Do not start new service - its will auto-started by WSFC on service's Owner node;
