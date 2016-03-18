@@ -1,50 +1,66 @@
 ## WSFC Miner 
 This is a little Powershell script help to fetch metric's values from Windows Server Failover Cluster (WSFC).
 
-Tested on Windows Server 2008 R2 SP1 only.
+Actual release 1.0.0
 
-Version 0.9 works with no more that **one** cluster.
+Tested on Windows Server 2008 R2 SP1, Powershell 2.0
 
 
 Supported objects:
+
 - _Cluster_ - Windows Server Failover Cluster (WSFC);
 - _ClusterNode_ - WSFC node;
 - _ClusterNetwork_ - WSFC Network;
-- _ClusterAvailableDisk_ - WSFC Available (unused) Disk resources;
+- _ClusterNetworkInterface) - failover cluster's network adapter;
+- _ClusterAvailableDisk_ - WSFC Available (unused) Disk resources. That disk can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.;
 - _ClusterResourceGenericService_ - WSFC resource 'Generic Service';
 - _ClusterResourceVirtualMachine_ - WSFC resource 'Virtual Machine';
+- _ClusterResourceVirtualMachineConfiguration_ - WSFC resource 'Virtual Machine Configuration';
+- _ClusterResourceIPAddress_ - WSFC resource 'IP Address';
+- _ClusterResourceNetworkName_ - WSFC resource 'Network Name';
+- _ClusterResourcePhysicalDisk_ - WSFC resource 'Physical Disk';
 - _ClusterSharedVolume_ - WSFC Shared Volumes;
+- _ClusterQuorum_ - WSFC cluster's quorum.
 
 Zabbix's LLD available to all objects;
 
-Virtual keys are:
-- _VirtualMachine_ :
-  - _SummaryInformation.*_ - set of metrics related to Cluster resource 'Virtual Machine' and fetched from MsVM_virtualSystemManagementService class with WMI-query
-  - _OnlinePending_ / _Online_ / _OffLinePending_ / _Offline_ - collection of onlinepending / online/ offlinepending / offline VM's;
-- _GenericService_ 
-  - _Online_ / _Offline_  - collection of online / offline services;
+Virtual keys for 'Cluster', 'ClusterNode' objects:
+- _VirtualMachine.Online_ - failover cluster's resource 'Virtual Machine' in Online state;
+- _VirtualMachine.Offline_ - ... in Offline state;
+- _VirtualMachine.OnlinePending_ - ... in OnlinePending state;
+- _VirtualMachine.OfflinePending_ - ... in OfflinePending state;
+- _VirtualMachine.SummaryInformation_ - set of metrics related to cluster resource 'Virtual Machine' and fetched from MsVM_virtualSystemManagementService class with WMI-query
+- _GenericService.Online_  - failover cluster's resource 'Generic Service' in Online state;
+- _GenericService.Offline_ - ... in Offline state;
 
-- _ClusterParameter.*_ - set of metrics fetched with Get-ClusterParameter cmdlet for specified object.
+Virtual keys for all object which contains in ClusterParameter (see Get-ClusterParameter cndlet) table
+- _ClusterParameter.\<metric\>_ - object's metric from ClusterParameter table.
+
 
 Actions
-- _Discovery_ - get Zabbix's LLD-JSON for specified Object;
-- _Get_ - get value of Object metric;
-- _Sum_ - sum values of metrics in Objects collection;
-- _Count_ - count Objects in collection;
+- _Discovery_ - Make Zabbix's LLD JSON;
+- _Get_       - Get metric from collection item;
+- _Sum_       - Sum metrics of collection items;
+- _Count_     - Count collection items.
+
 
 ###How to use standalone
 
     # Get Cluster name
-    powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File "wsfc.ps1" -Action "Get" -Object "Cluster" -Key "Name" -Id "f4479814-35d4-41c5-babd-c0697769ac31"
+    powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File "wsfc.ps1" -Action "Get" -ObjectType "Cluster" -Key "Name" -Id "f4479814-35d4-41c5-babd-c0697769ac31"
 
     # Get PercentFree metric value from SharedVolumeInfo.Partition table for volume with ID=b8b67dbf-e66f-443e-926e-be1d1621ece5
-    ..."wsfc.ps1" -Action "Get" -Object "ClusterSharedVolume" -Key "SharedVolumeInfo.Partition.PercentFree" -Id "b8b67dbf-e66f-443e-926e-be1d1621ece5"
+    ..."wsfc.ps1" -Action "Get" -ObjectType "ClusterSharedVolume" -Key "SharedVolumeInfo.Partition.PercentFree" -Id "b8b67dbf-e66f-443e-926e-be1d1621ece5"
 
     # Get total number of vCPUs assigned to all clustered VMs which hosted on Node with ID=00000000-0000-0000-0000-000000000001
-    ... "wsfc.ps1" -Action "Sum" -Object "ClusterNode" -Key "SummaryInformation.VirtualMachine.NumberOfProcessors" -Id "00000000-0000-0000-0000-000000000001"
+    ... "wsfc.ps1" -Action "Sum" -ObjectType "ClusterNode" -Key "SummaryInformation.VirtualMachine.NumberOfProcessors" -Id "00000000-0000-0000-0000-000000000001"
 
     # Get total number of Memory assigned (dynamically for WS2008 R2 SP1+) to all clustered VMs which placed in Cluster with ID=f4479814-35d4-41c5-babd-c0697769ac31
-    ... "wsfc.ps1" -Action "Sum" -Object "Cluster" -Key "SummaryInformation.VirtualMachine.NumberOfProcessors" -Id "00000000-0000-0000-0000-000000000001"
+    ... "wsfc.ps1" -Action "Sum" -ObjectType "Cluster" -Key "SummaryInformation.VirtualMachine.NumberOfProcessors" -Id "00000000-0000-0000-0000-000000000001"
+
+    # Get formatted list of 'ClusterSharedVolume' object metrics accessed with property 'SharedVolumeInfo.Partition'. Verbose messages is enabled. 
+    ... "wsfc.ps1" -Action "Get" -ObjectType "ClusterSharedVolume" -Key "SharedVolumeInfo.Partition" -ID "8e8fb118-2601-4a06-ab9a-f0a1260bd247" -DefaultConsoleWidth -Verbose
+
 
 
 ###How to use with Zabbix
@@ -72,6 +88,6 @@ Do not try import Zabbix v2.4 template to Zabbix _pre_ v2.4. You need to edit .x
 - Please read descrition to Discovery Rules and Items to find helpful info (links to MSDN pages, that describe metrics);
 - If you use non-english (for example Russian Cyrillic) symbols in VM's names and want to get correct UTF-8 on Zabbix Server side, then you must add _-consoleCP **your_native_codepage**_ parameter to command line. For example to convert from Russian Cyrillic codepage (CP866), use _powershell -File C:\zabbix\scripts\wsfc.ps1 -Action "$1" -Object "$2" -Key "$3" -Id "$4" -consoleCP CP866_;
 - To leave console default width while run script use _-defaultConsoleWidth_ option.
-- If you get Zabbix's "Should be JSON" - try to increase cols in _mode con cols=255_ command inside _wsfc.ps1_.
+- If you get Zabbix's "Should be JSON" - try to increase cols in _mode con cols=255_ command inside _wsfc.ps1_. Powershell use console width to format output JSON-lines and can break its. 
 
 Beware: frequent requests to PowerShell script eat CPU and increase Load. To avoid it - don't use small update intervals with Zabbix's Data Items and disable unused.

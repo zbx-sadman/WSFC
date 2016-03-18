@@ -1,236 +1,601 @@
 <#                                          
-Microsoft Server Failover Cluster's Miner
-Version 0.9
-zbx.sadman@gmail.com (c) 2016
-https://github.com/zbx-sadman
+    .SYNOPSIS  
+        Return Microsoft Server Failover Cluster's metrics value, sum & count selected objects, make LLD-JSON for Zabbix
+
+    .DESCRIPTION
+        Return Microsoft Server Failover Cluster's metrics value, sum & count selected objects, make LLD-JSON for Zabbix
+
+    .NOTES  
+        Version: 1.0.0
+        Name: WSFC Miner
+        Author: zbx.sadman@gmail.com
+        DateCreated: 18MAR2016
+        Testing environment: Windows Server 2008R2 SP1, Powershell 2.0
+
+    .LINK  
+        https://github.com/zbx-sadman
+
+    .PARAMETER Action
+        What need to do with collection or its item:
+            Discovery - Make Zabbix's LLD JSON;
+            Get       - Get metric from collection item;
+            Sum       - Sum metrics of collection items;
+            Count     - Count collection items.
+
+    .PARAMETER ObjectType
+        Define rule to make collection:
+            Cluster   - failover cluster;
+            ClusterNode - failover cluster's node;
+            ClusterNetwork - failover cluster's network;
+            ClusterNetworkInterface - failover cluster's network adapter;
+            ClusterResourceGenericService - failover cluster's resource 'Generic Service';
+            ClusterResourceVirtualMachine - failover cluster's resource 'Virtual Machine';
+            ClusterResourceVirtualMachineConfiguration - failover cluster's resource 'Virtual Machine Configuration';
+            ClusterResourceIPAddress - failover cluster's resource 'IP Address';
+            ClusterResourceNetworkName - failover cluster's resource 'Network Name';
+            ClusterResourcePhysicalDisk - failover cluster's resource 'Physical Disk';
+            ClusterAvailableDisk - failover cluster's disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.
+            ClusterSharedVolume - failover cluster's Cluster Shared Volume;
+            ClusterQuorum - failover cluster's quorum;
+
+    .PARAMETER Key
+        Define "path" to collection item's metric 
+
+        Virtual keys for 'Cluster', 'ClusterNode' objects:
+            VirtualMachine.Online - failover cluster's resource 'Virtual Machine' in Online state;
+            VirtualMachine.Offline - ... in Offline state;
+            VirtualMachine.OnlinePending  - ... in OnlinePending state;
+            VirtualMachine.OfflinePending - ... in OfflinePending state;
+            VirtualMachine.SummaryInformation - set of metrics related to cluster resource 'Virtual Machine' and fetched from MsVM_virtualSystemManagementService class with WMI-query
+            GenericService.Online  - failover cluster's resource 'Generic Service' in Online state;
+            GenericService.Offline - ... in Offline state;
+
+        Virtual keys for all object which linked to ClusterParameter (see Get-ClusterParameter cndlet) table
+            ClusterParameter.<metric> - object's metric from ClusterParameter table
+
+    .PARAMETER ID
+        Used to select only one item from collection
+
+    .PARAMETER ErrorCode
+        What must be returned if any process error will be reached
+
+    .PARAMETER ConsoleCP
+        Codepage of Windows console. Need to properly convert output to UTF-8
+
+    .PARAMETER DefaultConsoleWidth
+        Say to leave default console width and not grow its to $CONSOLE_WIDTH
+
+    .PARAMETER Verbose
+        Enable verbose messages
+
+    .EXAMPLE 
+        powershell.exe -NoProfile -ExecutionPolicy "RemoteSigned" -File "wsfc.ps1" -Action "Discovery" -ObjectType "ClusterResourceVirtualMachine"
+
+        Description
+        -----------  
+        Make Zabbix's LLD JSON for Virtual Machines in failover cluster(s)
+
+    .EXAMPLE 
+        ... "wsfc.ps1" -Action "Count" -ObjectType "ClusterNode" -Key "VirtualMachine.Online" -Id "00000000-0000-0000-0000-000000000002" -consoleCP CP866
+
+        Description
+        -----------  
+        Return number of online Virtual Machines owned by cluster node with id="00000000-0000-0000-0000-000000000002". 
+        All Russian Cyrillic sybbols in VM's names (for example) will be converted to UTF-8.
+
+
+    .EXAMPLE 
+        ... "wsfc.ps1" -Action "Sum" -ObjectType "Cluster" -Key "VirtualMachine.SummaryInformation.MemoryUsage" -Id "f4479814-35d4-41c5-babd-c0697769ac31"
+
+        Description
+        -----------  
+        Return memory size that assigned to (used by) Virtual Machines owned by whole cluster with id="f4479814-35d4-41c5-babd-c0697769ac31"
+
+    .EXAMPLE 
+        ... "wsfc.ps1" -Action "Get" -ObjectType "ClusterSharedVolume" -Key "SharedVolumeInfo.Partition" -ID "8e8fb118-2601-4a06-ab9a-f0a1260bd247" -DefaultConsoleWidth -Verbose
+
+        Description
+        -----------  
+        Show formatted list of 'ClusterSharedVolume' object metrics accessed with property 'SharedVolumeInfo.Partition'.
+        Verbose messages is enabled. 
+
 #>
 
+
 Param (
-[string]$Action,
-[string]$Cluster,
-[string]$Object,
-[string]$Key,
-[string]$Id,
-[string]$consoleCP,
-[switch]$defaultConsoleWidth
-)
+   [Parameter(Mandatory = $False)] 
+   [ValidateSet('Discovery','Get','Count', 'Sum')]
+   [String]$Action,
+   [String]$ClusterName,
+   [Parameter(Mandatory = $False)]
+   [ValidateSet('Cluster', 'ClusterNode', 'ClusterNetwork', 'ClusterNetworkInterface', 'ClusterResourceGenericService', 
+                'ClusterResourceVirtualMachine', 'ClusterResourceVirtualMachineConfiguration', 'ClusterResourceNetworkName', 'ClusterResourceIPAddress', 
+                'ClusterResourcePhysicalDisk', 'ClusterAvailableDisk', 'ClusterSharedVolume')]
+   [Alias('Object')]
+   [String]$ObjectType,
+   [Parameter(Mandatory = $False)]
+   [String]$Key,
+   [Parameter(Mandatory = $False)]
+   [String]$Id,
+   [Parameter(Mandatory = $False)]
+   [String]$ErrorCode,
+   [Parameter(Mandatory = $False)]
+   [String]$ConsoleCP,
+   [Parameter(Mandatory = $False)]
+   [Switch]$DefaultConsoleWidth
+);
 
+#Set-StrictMode -Version Latest
+
+# Set US locale to properly formatting float numbers while converting to string
 [System.Threading.Thread]::CurrentThread.CurrentCulture = "en-US"
+# Width of console to stop breaking JSON lines
+Set-Variable -Option Constant -Name "CONSOLE_WIDTH" -Value 512
 
-Set-Variable -Name "RES_VM" -Value 'Virtual Machine' -Option Constant -Scope Global
-Set-Variable -Name "RES_GS" -Value 'Generic Service' -Option Constant -Scope Global
-Set-Variable -Name "NS_HYPERV" -Value 'root\virtualization' -Option Constant -Scope Global
+Set-Variable -Option Constant -Name "RES_VM"  -Value 'Virtual Machine'
+Set-Variable -Option Constant -Name "RES_GS"  -Value 'Generic Service'
+Set-Variable -Option Constant -Name "RES_PD"  -Value 'Physical Disk'
+Set-Variable -Option Constant -Name "RES_NN"  -Value 'Network Name'
+Set-Variable -Option Constant -Name "RES_IA"  -Value 'IP Address'
+Set-Variable -Option Constant -Name "RES_VMC" -Value 'Virtual Machine Configuration'
 
-filter IDEqualOrAny($Id) { if (($_.Id -Eq $Id) -Or (!$Id)) { $_ } }
+Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization' 
 
-Function Prepare-ToLLD {
-  Param (
-           [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
-           [PSObject]$InObject
-        );
-  $InObject = ($InObject.ToString());
-  $InObject.Replace("`"", "\`"");
+####################################################################################################################################
+#
+#                                                  Function block
+#    
+####################################################################################################################################
+#
+#  Select object with Property that equal Value if its given or with Any Property in another case
+#
+Function PropertyEqualOrAny {
+   Param (
+      [Parameter(ValueFromPipeline = $True)] 
+      [PSObject]$InputObject,
+      [PSObject]$Property,
+      [PSObject]$Value
+   );
+   Process {
+      # Do something with all objects (non-pipelined input case)  
+      ForEach ($Object in $InputObject) { 
+         # IsNullorEmpty used because !$Value give a erong result with $Value = 0 (True).
+         # But 0 may be right ID  
+         If (($Object.$Property -Eq $Value) -Or ([string]::IsNullorEmpty($Value))) { $Object }
+      }
+   } 
 }
 
-function ConvertTo-Encoding ([string]$From, [string]$To){  
-    Begin   {  
-        $encFrom = [System.Text.Encoding]::GetEncoding($from)  
-        $encTo = [System.Text.Encoding]::GetEncoding($to)  
-    }  
-    Process {  
-        $bytes = $encTo.GetBytes($_)  
-        $bytes = [System.Text.Encoding]::Convert($encFrom, $encTo, $bytes)  
-        $encTo.GetString($bytes)  
-    }  
+#
+#  Prepare string to using with Zabbix 
+#
+Function PrepareTo-Zabbix {
+   Param (
+      [Parameter(ValueFromPipeline = $True)] 
+      [PSObject]$InputObject,
+      [String]$ErrorCode,
+      [Switch]$NoEscape,
+      [Switch]$JSONCompatible
+   );
+   Begin {
+      # Add here more symbols to escaping if you need
+      $EscapedSymbols = @('\', '"');
+      $UnixEpoch = Get-Date -Date "01/01/1970";
+   }
+   Process {
+      # Do something with all objects (non-pipelined input case)  
+      ForEach ($Object in $InputObject) { 
+         If ($Null -Eq $Object) {
+           # Put empty string or $ErrorCode to output  
+           If ($ErrorCode) { $ErrorCode } Else { "" }
+           Continue;
+         }
+         # Need add doublequote around string for other objects when JSON compatible output requested?
+         $DoQuote = $False;
+         Switch (($Object.GetType()).FullName) {
+            'System.Boolean'  { $Object = [int]$Object; }
+            'System.DateTime' { $Object = (New-TimeSpan -Start $UnixEpoch -End $Object).TotalSeconds; }
+            Default           { $DoQuote = $True; }
+         }
+         # Normalize String object
+         $Object = $( If ($JSONCompatible) { $Object.ToString() } else { $Object | Out-String }).Trim();
+         
+         If (!$NoEscape) { 
+            ForEach ($Symbol in $EscapedSymbols) { 
+               $Object = $Object.Replace($Symbol, "\$Symbol");
+            }
+         }
+
+         # Doublequote object if adherence to JSON standart requested
+         If ($JSONCompatible -And $DoQuote) { 
+            "`"$Object`"";
+         } else {
+            $Object;
+         }
+      }
+   }
 }
 
+#
+#  Convert incoming object's content to UTF-8
+#
+Function ConvertTo-Encoding ([String]$From, [String]$To){  
+   Begin   {  
+      $encFrom = [System.Text.Encoding]::GetEncoding($from)  
+      $encTo = [System.Text.Encoding]::GetEncoding($to)  
+   }  
+   Process {  
+      $bytes = $encTo.GetBytes($_)  
+      $bytes = [System.Text.Encoding]::Convert($encFrom, $encTo, $bytes)  
+      $encTo.GetString($bytes)  
+   }  
+}
+
+#
+#  Make & return JSON, due PoSh 2.0 haven't Covert-ToJSON
+#
+Function Make-JSON {
+   Param (
+      [Parameter(ValueFromPipeline = $True)] 
+      [PSObject]$InputObject, 
+      [array]$ObjectProperties, 
+      [Switch]$Pretty
+   ); 
+   Begin   {
+      [String]$Result = "";
+      # Pretty json contain spaces, tabs and new-lines
+      If ($Pretty) { $CRLF = "`n"; $Tab = "    "; $Space = " "; } Else { $CRLF = $Tab = $Space = ""; }
+      # Init JSON-string $InObject
+      $Result += "{$CRLF$Space`"data`":[$CRLF";
+      # Take each Item from $InObject, get Properties that equal $ObjectProperties items and make JSON from its
+      $itFirstObject = $True;
+   } 
+   Process {
+      # Do something with all objects (non-pipelined input case)  
+      ForEach ($Object in $InputObject) {
+         # Skip object when its $Null
+         If ($Null -Eq $Object) { Continue; }
+
+         If (-Not $itFirstObject) { $Result += ",$CRLF"; }
+         $itFirstObject=$False;
+         $Result += "$Tab$Tab{$Space"; 
+         $itFirstProperty = $True;
+         # Process properties. No comma printed after last item
+         ForEach ($Property in $ObjectProperties) {
+            If (-Not $itFirstProperty) { $Result += ",$Space" }
+            $itFirstProperty = $False;
+            $Result += "`"{#$Property}`":$(PrepareTo-Zabbix -InputObject $Object.$Property -JSONCompatible)";
+         }
+         # No comma printed after last string
+         $Result += "$Space}";
+      }
+   }
+   End {
+      # Finalize and return JSON
+      "$Result$CRLF$Tab]$CRLF}";
+   }
+}
+
+#
+#  Return value of object's metric defined by key-chain from $Keys Array
+#
 Function Get-Metric { 
-  Param ([PSObject]$InObject, [array]$Keys);
+   Param (
+      [Parameter(ValueFromPipeline = $True)] 
+      [PSObject]$InputObject, 
+      [Array]$Keys
+   ); 
+   Process {
+      # Do something with all objects (non-pipelined input case)  
+      ForEach ($Object in $InputObject) { 
+        If ($Null -Eq $Object) { Continue; }
+       # Expand all metrics related to keys contained in array step by step
+        ForEach ($Key in $Keys) {              
+           If ($Key) {
+              $Object = Select-Object -InputObject $Object -ExpandProperty $Key -ErrorAction SilentlyContinue;
+              If ($Error) { Break; }
+           }
+        }
+        $Object;
+      }
+   }
+}
 
-  if ('ClusterParameter' -eq $Keys[0]) {
-     if ($Keys[1]) {
-        $InObject = ($InObject | Get-ClusterParameter $Keys[1]).Value;
-     } else {
-        $InObject = $InObject | Get-ClusterParameter ;
-     }
-  } else {
-     $Keys | % { if ($_) { $InObject = $InObject | Select -Expand $_ }};
-  }
-  $InObject;
+#
+#  Exit with specified ErrorCode or Warning message
+#
+Function Exit-WithMessage { 
+   Param (
+      [Parameter(Mandatory = $True, ValueFromPipeline = $True)] 
+      [String]$Message, 
+      [String]$ErrorCode 
+   ); 
+   If ($ErrorCode) { 
+      $ErrorCode;
+   } Else {
+      Write-Warning ($Message);
+   }
+   Exit;
 }
 
 Function Get-ClusterResourceList { 
-  Param (
-           [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
-           [PSObject]$InObject, 
-           [string]$ResourceType
-        );
-  # Get all Resources with some type that related to InObject or just copy item if InObject already contain Resources
-  $Result = $InObject | % { if ( $_.ResourceType ) { $_ } else { $_ | Get-ClusterResource }} | ? {$ResourceType -eq $_.ResourceType}; 
-  if ($Result) {
-     switch ($ResourceType) {
-        $RES_VM  {  
-                   # Force push VmID to list
-                   $Result | % { $_ | Add-Member -Force -MemberType NoteProperty -Name "VmID" -Value ($_ | Get-ClusterParameter VmID).Value; }
-                 }
-       }
-  }
-  # Return Resource list
-  $Result;
-}
-
-Function How-Much { 
-   Begin   { $Result = 0; }  
-   Process { if ($_) { $Result++; } }  
-   End     { $Result; }
-}
-
-Function ConvertTo-UnixTime { 
-    Begin   { $StartDate = Get-Date -Date "01/01/1970"; }  
-    Process { (New-TimeSpan -Start $StartDate -End $_).TotalSeconds; }  
-}
-
-Function Make-JSON {
-  Param ([PSObject]$InObject, [array]$ObjectProperties, [switch]$Pretty);
-  # Pretty json contain spaces, tabs and new-lines
-  if ($Pretty) { $CRLF = "`n"; $Tab = "    "; $Space = " "; } else {$CRLF = $Tab = $Space = "";}
-  # Init JSON-string $InObject
-  $Result += "{$CRLF$Space`"data`":[$CRLF";
-  # Take each Item from $InObject, get Properties that equal $ObjectProperties items and make JSON from its
-  $itFirstObject = $True;
-  ForEach ($Object in $InObject) {
-     if (-Not $itFirstObject) { $Result += ",$CRLF"; }
-     $itFirstObject=$False;
-     $Result += "$Tab$Tab{$Space"; 
-     $itFirstProperty = $True;
-     # Process properties. No comma printed after last item
-     ForEach ($Property in $ObjectProperties) {
-        if (-Not $itFirstProperty) { $Result += ",$Space" }
-        $itFirstProperty = $False;
-        $Result += "`"{#$Property}`":$Space`"$($Object.$Property | Prepare-ToLLD)`""
-     }
-     # No comma printed after last string
-     $Result += "$Space}";
-  }
-  # Finalize and return JSON
-  "$Result$CRLF$Tab]$CRLF}";
+   Param (
+      [Parameter(Mandatory = $True, ValueFromPipeline = $True)] 
+      [PSObject]$InputObject, 
+      [Parameter(Mandatory = $False)] 
+      [string]$ResourceType
+   ); 
+   Process {
+      Write-Verbose "$(Get-Date) Going thru object list";
+      ForEach ($Object in $InputObject) { 
+         If ($Null -Eq $Object) { Continue; }
+         Write-Verbose "$(Get-Date) Object $($Object.GetType().Name) $($Object.Name) processeed";
+         $ClusterResources = $(
+            # Object may be already is Get-ClusterResource with ResourceType property
+            if ($Object.ResourceType) { 
+               Write-Verbose "$(Get-Date) Going thru object list";
+               $Object;
+            } else {
+               Write-Verbose "$(Get-Date) Taking all ClusterResources for this object";
+               Get-ClusterResource -InputObject $Object;
+            } 
+         ) | Where-Object {$ResourceType -eq $_.ResourceType};
+         Write-Verbose "$(Get-Date) ClusterResources is Null? $($Null -Eq $ClusterResources)";
+         # Go to next loop if no $ClusterResources found
+         if ($Null -Eq $ClusterResources) { Continue; }
+         Write-Verbose "$(Get-Date) Process ClusterResources";
+     
+         # Walk Thru resources
+         ForEach ($ClusterResource in $ClusterResources) {
+            Switch ($ClusterResource.ResourceType) {
+               $RES_VM  {  
+                  # Force push VmID property to ClusterResource object if its Virtual Machine
+                  Add-Member -InputObject $ClusterResource -Force -MemberType NoteProperty -Name "VmID" -Value (Get-ClusterParameter -InputObject $ClusterResource -Name VmID).Value;
+               }
+            } 
+         } # ForEach ($ClusterResource in $ClusterResources)
+         # Return Resource list
+         $ClusterResources;
+      } # ForEach ($Object in $InputObject)
+   }
 }
 
 Function Get-MsvmSummaryInformation { 
   Param (
          [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
-         [PSObject]$inObject, 
+         [PSObject]$InputObject, 
          [Parameter(Mandatory = $true)] 
          [string]$ResourceType
         ); 
   # Get list of 'VM' cluster resources related to Object (Cluster, Clusternode, one VM)
   # if 'ResourceType' prop is exist - object already ClusterResource 
   $Result = @();
-  if (!$inObject) { return $Result; }
-  $Resources = $inObject | % { if ($_.ResourceType) { $_ } else { $_ | Get-ClusterResourceList -ResourceType $ResourceType }}
-  if (!$Resources) { return $Result; }
-  $Nodes = $Resources | % {$_.OwnerNode} | Select-Object -Unique
-  ForEach ($Node in $Nodes) {
-     $VSMgtSvc = Get-WmiObject -ComputerName $Node -NameSpace $NS_HYPERV -Class 'MsVM_virtualSystemManagementService'
+  # pre-group resources by OwnerNode to make one WMI-query to one Owner for its resources
+  $GroupedResources = @{};
+  ForEach ($Object in $InputObject) {
+     If ($Null -Eq $Object) { Continue; }
+     $OwnerNode = $Object.OwnerNode.Name;
+     If (!$GroupedResources.ContainsKey($OwnerNode)) { 
+        $GroupedResources.Add($OwnerNode, @())
+     }
+     $GroupedResources.$OwnerNode += $Object;
+  
+  }
+  ForEach ($OwnerNode in $GroupedResources.Keys) {
+     If ($Null -Eq $OwnerNode) { Continue; }
      # take only current Node's Resources
-     $NodeResources = $Resources | ? { $_.OwnerNode.Id -eq $Node.Id }
      switch ($ResourceType) {
         $RES_VM  {
-                    # Make array of $VmSettings.__Paths. Valid for WS2008 R2 SP1 at least
-                    $VMSettingPaths = $NodeResources | % { "\\$($_.OwnerNode)\$($NS_HYPERV):Msvm_VirtualSystemSettingData.InstanceID=`"Microsoft:$($_.VmID)`""}
-                    # Get bunch of SummaryInformation objects related to VM's which paths contains in $VMSettingPaths
-                    # See https://msdn.microsoft.com/en-us/library/cc160706(v=vs.85).aspx to form Information block with @(0,1,4,101,103,...)
-                    $NodeVMsSummaryInformation = $VSMgtSvc.GetSummaryInformation( $VMSettingPaths ,  @(0,1,2,4,100,101,103,104,105,106,109,110,112,113))
-                    if ( 0 -eq $NodeVMsSummaryInformation.ReturnValue ) { $Result += $NodeVMsSummaryInformation; }
-                 }
+           $VSMgtSvc = Get-WmiObject -ComputerName $OwnerNode -NameSpace $NS_HYPERV -Class 'MsVM_virtualSystemManagementService'
+           # Make array of $VmSettings.__Paths. Valid for WS2008 R2 SP1 at least
+           $VMSettingPaths = $(ForEach($VM in @($GroupedResources.$OwnerNode)) { 
+              "\\$($OwnerNode)\$($NS_HYPERV):Msvm_VirtualSystemSettingData.InstanceID=`"Microsoft:$($VM.VmID)`"" 
+           });
+           # Get bunch of SummaryInformation objects related to VM's which paths contains in $VMSettingPaths
+           # See https://msdn.microsoft.com/en-us/library/cc160706(v=vs.85).aspx to form Information block with @(0,1,4,101,103,...)
+           $NodeVMsSummaryInformation = $VSMgtSvc.GetSummaryInformation( $VMSettingPaths ,  @(0,1,2,4,100,101,103,104,105,106,109,110,112,113))
+           if ( 0 -eq $NodeVMsSummaryInformation.ReturnValue ) { $NodeVMsSummaryInformation.SummaryInformation; }
+        } # $RES_VM
      } # switch
   } # Foreach
-  $Result
 }
 
+Write-Verbose "$(Get-Date) Import 'FailoverClusters' module";
+
 # Import the cmdlets
-Import-Module FailoverClusters
+Import-Module -Name FailoverClusters -Verbose:$False -Cmdlet Get-* 
 
-if ($Cluster -eq '') 
-   { $objCluster = Get-Cluster | Select-Object -First 1 }
-else
-   { $objCluster = Get-Cluster -Name $Cluster }
+if ([String]::IsNullorEmpty($ClusterName)) { 
+   Write-Verbose "$(Get-Date) Try to get clusters";
+   $Clusters = Get-Cluster
+} else {
+   Write-Verbose "$(Get-Date) Try to get '$ClusterName' cluster";
+   $Clusters = Get-Cluster -Name $ClusterName
+}
 
-#"Work with: $($objCluster.Name)`nAction: $Action, Object: $Object";
-                                   
-# if needProcess is False - $Result is not need to convert to string and etc 
-$needProcess = $True;
-$Keys = $Key.split(".");
+If ($Null -Eq $Clusters) {
+   Exit-WithMessage -Message "No cluster(s) availabile" -ErrorCode $ErrorCode;
+}
+
+$Result = 0;
+# split key to subkeys
+$Keys = $Key.Split(".");
+
+Write-Verbose "$(Get-Date) Creating collection of specified object: '$ObjectType'";
 
 # Prepare object lists
 
-switch ($Object) {
-     'Cluster'                       { $Objects = $objCluster | IDEqualOrAny $Id; }
-     'ClusterNode'                   { $Objects = $objCluster | Get-ClusterNode | IDEqualOrAny $Id; }
-     'ClusterNetwork' 	             { $Objects = $objCluster | Get-ClusterNetwork | IDEqualOrAny $Id; }
-     'ClusterAvailableDisk'          { $Objects = $objCluster | Get-ClusterAvailableDisk | IDEqualOrAny $Id; }
-     'ClusterResourceGenericService' { $Objects = $objCluster | Get-ClusterResourceList -ResourceType $RES_GS | IDEqualOrAny $Id; }
-     'ClusterResourceVirtualMachine' { $Objects = $objCluster | Get-ClusterResourceList -ResourceType $RES_VM | IDEqualOrAny $Id; }
-     'ClusterSharedVolume'           {
-                                       $Objects = $objCluster | Get-ClusterSharedVolume | IDEqualOrAny $Id; 
-                                       $Objects | Add-Member -MemberType NoteProperty -Name "Cluster" -Value $objCluster.Name;
-                                       $Objects | % { $_ | Add-Member -MemberType NoteProperty -Name "FriendlyVolumeName" -Value ($_ | Select -Expand SharedVolumeInfo  | Select -Expand FriendlyVolumeName) };
-                                     }
-} # switch ($Object)
+$Objects = $( ForEach ($Cluster in $Clusters) {  
+   If ($Null -Eq $Cluster) { Continue; }
+   Switch ($ObjectType) {
+     'Cluster' {
+         PropertyEqualOrAny -InputObject $Clusters -Property ID -Value $Id;  
+     }
+     'ClusterNode' { 
+         PropertyEqualOrAny -InputObject (Get-ClusterNode -InputObject $Cluster) -Property ID -Value $Id
+     }
+     'ClusterNetwork' { 
+         PropertyEqualOrAny -InputObject (Get-ClusterNetwork -InputObject $Cluster) -Property ID -Value $Id
+     }
+     'ClusterNetworkInterface' { 
+         PropertyEqualOrAny -InputObject (Get-ClusterNetworkInterface -InputObject $Cluster) -Property ID -Value $Id
+     }
+     'ClusterResourceGenericService' { 
+         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_GS) -Property ID -Value $Id
+     }
+     'ClusterResourceVirtualMachine' {
+         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_VM) -Property ID -Value $Id
+     }
+     'ClusterResourcePhysicalDisk' {
+         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_PD) -Property ID -Value $Id
+     }
+     'ClusterResourceNetworkName' {
+         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_NN) -Property ID -Value $Id
+     }
+     'ClusterResourceIPAddress' {
+         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_IA) -Property ID -Value $Id
+     }
+     'ClusterResourceVirtualMachineConfiguration' {
+         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_VMC) -Property ID -Value $Id
+     }
+     'ClusterAvailableDisk' { 
+         PropertyEqualOrAny -InputObject (Get-ClusterAvailableDisk -InputObject $Cluster) -Property ID -Value $Id
+     }
+     'ClusterSharedVolume' {
+         $CSVs = PropertyEqualOrAny -InputObject (Get-ClusterSharedVolume -InputObject $Cluster) -Property ID -Value $Id
+         ForEach ($CSV in $CSVs) {  
+            If ($Null -Eq $CSV) { Continue; }
+            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "Cluster" -Value $Cluster.Name;
+            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FriendlyVolumeName" -Value ($($CSV.SharedVolumeInfo).FriendlyVolumeName);
+            $CSV
+         }
+     }
+     'ClusterQuorum' {
+         PropertyEqualOrAny -InputObject (Get-ClusterQuorum -InputObject $Cluster) -Property ID -Value $Id
+     }
 
-switch ($Keys[0]) {
-   'VirtualMachine' {
-                           switch ($Keys[1]) {
-                              'SummaryInformation' { $Objects = $Objects | Get-MsvmSummaryInformation -ResourceType $RES_VM; }
-                              'Online'             { $Objects = $Objects | Get-ClusterResourceList -ResourceType $RES_VM | ? { 'online'         -eq $_.State }}
-                              'Offline'            { $Objects = $Objects | Get-ClusterResourceList -ResourceType $RES_VM | ? { 'offline'        -eq $_.State }}
-                              'OnlinePending'      { $Objects = $Objects | Get-ClusterResourceList -ResourceType $RES_VM | ? { 'onlinepending'  -eq $_.State }}
-                              'OfflinePending'     { $Objects = $Objects | Get-ClusterResourceList -ResourceType $RES_VM | ? { 'offlinepending' -eq $_.State }}
-                           }
-                           $Keys[0] = '';
-                    }
-   'GenericService' {
-                           switch ($Keys[1]) {
-                              'Online'             { $Objects = $Objects | Get-ClusterResourceList -ResourceType $RES_GS | ? { 'online'         -eq $_.State }}
-                              'Offline'            { $Objects = $Objects | Get-ClusterResourceList -ResourceType $RES_GS | ? { 'offline'        -eq $_.State }}
-                           }
-                           $Keys[0] = '';
-                    }
-}
+   } # switch ($Object)
+});
 
+#$Objects | fl *
+#exit
+
+Write-Verbose "$(Get-Date) Analyzing key";
+$Objects = $( 
+   Switch ($Keys[0]) {
+      'VirtualMachine' {
+         Write-Verbose "$(Get-Date) 'VirtualMachine.*' key detected";
+#         $VMs = Get-ClusterResourceList -InputObject $Objects | ? { $RES_VM -eq $_.ResourceType }
+         $VMs = Get-ClusterResourceList -InputObject $Objects -ResourceType $RES_VM 
+         Switch ($Keys[1]) {
+            'SummaryInformation' { 
+               Get-MsvmSummaryInformation -InputObject $VMs -ResourceType $RES_VM; 
+               # SummaryInformation property is expanded by Get-MsvmSummaryInformation
+               # Get-Metric must be skip its
+               $Keys[1] = ''; 
+            }
+            'Online'             { $VMs | ? {'online'         -eq $_.State }}
+            'Offline'            { $VMs | ? {'offline'        -eq $_.State }}
+            'OnlinePending'      { $VMs | ? {'onlinepending'  -eq $_.State }}
+            'OfflinePending'     { $VMs | ? {'offlinepending' -eq $_.State }}
+         }
+         $Keys[0] = '';
+      }
+      'GenericService' {
+         Write-Verbose "$(Get-Date) 'GenericService.*' key detected";
+         $GSs = Get-ClusterResourceList -InputObject $Objects -ResourceType $RES_GS 
+         Switch ($Keys[1]) {
+            'Online'             { $GSs | ? { 'online'         -eq $_.State }}
+            'Offline'            { $GSs | ? { 'offline'        -eq $_.State }}
+         }
+      $Keys[0] = '';
+      }
+      'ClusterParameter' {
+         Write-Verbose "$(Get-Date) 'ClusterParameter.*' key detected";
+         # Just fetch propertys from ClusterParameter table and add its to objects or return list if $Key == 'ClusterParameter'
+         ForEach ($Object in $Objects) {
+            If ($Null -Eq $Object) { Continue; }
+            If ($Keys[1]) {
+               $ClusterParameterValue = (Get-ClusterParameter -InputObject $Object -Name $Keys[1]).Value;
+               # Need to use prefix to make unique property?
+               # $Keys[1] = "__$($Keys[1])"
+               Add-Member -InputObject $Object -MemberType NoteProperty -Name $Keys[1] -Value $ClusterParameterValue;
+               $Object;
+            } else {
+               Get-ClusterParameter -InputObject $Object;
+            }
+         }
+      $Keys[0] = '';
+      }
+      # No virtual keys defined -> $Objects must be saved for future processing 
+      Default { $Objects; } 
+   }
+);
 switch ($Action) {
    'Discovery'   {
-                   switch ($Object) {
-                      'Cluster'                       { $ObjectProperties = @("ID", "NAME"); }
-                      'ClusterNode'                   { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE"); }
-                      'ClusterNetwork'  	      { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
-                      'ClusterAvailableDisk'          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
-                      'ClusterResourceGenericService' { $ObjectProperties = @("ID", "CLUSTER", "OWNERNODE", "NAME", "STATE"); }
-                      'ClusterResourceVirtualMachine' { $ObjectProperties = @("ID", "CLUSTER", "OWNERNODE", "NAME", "STATE"); }
-                      'ClusterSharedVolume'           { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME"); }
-                      default                         { $needProcess = $False; $Result = "Incorrect object: '$Object' for action Discovery";}
-                    }  
-                    if ($needProcess) { $Result = Make-JSON -InObject $Objects -ObjectProperties $ObjectProperties -Pretty; }
-                 }
-   'Get'         { if ($Keys) { $Result = Get-Metric -InObject $Objects -Keys $Keys } else { $Result = ($Objects | fl *)}; }
-                 # Get-Metric can return an array of objects. In this case need to take each item and add its to $r
-   'Sum'         { $Result = $Objects | % { $r = 0 } { (Get-Metric -InObject $_ -Keys $Keys) | % { $r += $_} } { $r }; }
-   'Count'       { $Result = $Objects | How-Much; }
-   #
-   # Error
-   #
-   default  { $Result = "Incorrect action: '$Action'"; }
+       Switch ($ObjectType) {
+          'Cluster'                       { $ObjectProperties = @("ID", "NAME"); }
+          'ClusterNode'                   { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE"); }
+          'ClusterNetwork'  	          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
+          'ClusterNetworkInterface'       { $ObjectProperties = @("ID", "CLUSTER", "NODE", "NAME", "STATE", "NETWORK", "ADDRESS"); }
+          'ClusterResourceGenericService' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
+          'ClusterResourceVirtualMachine' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
+          'ClusterResourcePhysicalDisk'   { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
+          'ClusterResourceNetworkName'    { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
+          'ClusterResourceIPAddress'      { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
+          'ClusterResourceVirtualMachineConfiguration' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
+          'ClusterAvailableDisk'          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
+          'ClusterSharedVolume'           { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME"); }
+       }  
+       Write-Verbose "$(Get-Date) Generating LLD JSON";
+       $Result =  Make-JSON -InputObject $Objects -ObjectProperties $ObjectProperties -Pretty;
+   }
+   # Get metrics or metric list
+   'Get' {
+      If ($Null -Eq $Objects) {
+         Exit-WithMessage -Message "No objects in collection" -ErrorCode $ErrorCode;
+      }
+      If ($Keys) { 
+         Write-Verbose "$(Get-Date) Getting metric related to key: '$Key'";
+         $Result = PrepareTo-Zabbix -InputObject (Get-Metric -InputObject $Objects -Keys $Keys) -ErrorCode $ErrorCode;
+      } Else { 
+         Write-Verbose "$(Get-Date) Getting metric list due metric's Key not specified";
+         $Result = Out-String -InputObject ($Objects);
+      };
+   }
+   # Get-Metric can return an array of objects. In this case need to take each item and add its to $r
+   'Sum' {
+      Write-Verbose "$(Get-Date) Sum objects";  
+      $Result = $( 
+         If ($Objects) { 
+            $Result = 0;
+            ForEach ($Object in $Objects) {
+               $Result += Get-Metric -InputObject $Object -Keys $Keys;
+            }
+            $Result
+         } Else { 0 } 
+      ); 
+   }
+   # Count selected objects
+   'Count' { 
+       Write-Verbose "$(Get-Date) Counting objects";  
+       # if result not null, False or 0 - return .Count
+       $Result = $(if ($Objects) { @($Objects).Count } else { 0 } ); 
+   }
 }  
 
-# if ('DateTime' -eq $Result.GetType()) {$Result = $Result | Convert-ToUnixTime;}
-
-# Normalize String object
-$Result = ($Result | Out-String).Trim();
-
-# Convert String to UTF-8 if need (For Zabbix LLD-JSON with Cyrillic for example)
-if ($consoleCP) { $Result = $Result | ConvertTo-Encoding -From $consoleCP -To UTF-8 }
+# Convert string to UTF-8 if need (For Zabbix LLD-JSON with Cyrillic chars for example)
+if ($consoleCP) { 
+   Write-Verbose "$(Get-Date) Converting output data to UTF-8";
+   $Result = $Result | ConvertTo-Encoding -From $consoleCP -To UTF-8; 
+}
 
 # Break lines on console output fix - buffer format to 255 chars width lines 
-if (!$defaultConsoleWidth) { mode con cols=255 }
+if (!$defaultConsoleWidth) { 
+   Write-Verbose "$(Get-Date) Changing console width to $CONSOLE_WIDTH";
+   mode con cols=$CONSOLE_WIDTH; 
+}
+
+Write-Verbose "$(Get-Date) Finishing";
 
 $Result;
