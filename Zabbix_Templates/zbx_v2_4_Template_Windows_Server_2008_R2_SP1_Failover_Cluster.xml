@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>2.0</version>
-    <date>2016-03-18T14:45:48Z</date>
+    <date>2016-03-18T19:50:41Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -9,14 +9,14 @@
     </groups>
     <templates>
         <template>
-            <template>Template OS Windows Server Failover Cluster</template>
-            <name>Template OS Windows Server Failover Cluster</name>
+            <template>Template WSFC</template>
+            <name>Template WSFC</name>
             <description>Windows Server Failover Cluster Template&#13;
 Tested on Windows Server 2008 R2 SP1, Zabbix v 2.4.&#13;
  &#13;
 https://github.com/zbx-sadman/WSFC&#13;
 &#13;
-Requirement: wsfc.ps1 v.0.9</description>
+Requirement: wsfc.ps1 v.1.0.0</description>
             <groups>
                 <group>
                     <name>Templates</name>
@@ -24,34 +24,34 @@ Requirement: wsfc.ps1 v.0.9</description>
             </groups>
             <applications>
                 <application>
-                    <name>Cluster Network Interfaces</name>
+                    <name>Cluster network interfaces</name>
                 </application>
                 <application>
-                    <name>Cluster Networks</name>
+                    <name>Cluster networks</name>
                 </application>
                 <application>
-                    <name>Cluster Nodes</name>
+                    <name>Cluster nodes</name>
+                </application>
+                <application>
+                    <name>Cluster resource: generic services</name>
+                </application>
+                <application>
+                    <name>Cluster resource: IP addresses</name>
+                </application>
+                <application>
+                    <name>Cluster resource: network names</name>
+                </application>
+                <application>
+                    <name>Cluster resource: physical disks</name>
+                </application>
+                <application>
+                    <name>Cluster resource: virtual machines</name>
                 </application>
                 <application>
                     <name>Clusters</name>
                 </application>
                 <application>
-                    <name>Cluster Shared Volumes</name>
-                </application>
-                <application>
-                    <name>Generic Services</name>
-                </application>
-                <application>
-                    <name>IP Addresses</name>
-                </application>
-                <application>
-                    <name>Network Names</name>
-                </application>
-                <application>
-                    <name>Physical Disks</name>
-                </application>
-                <application>
-                    <name>Virtual Machines</name>
+                    <name>Cluster shared volumes</name>
                 </application>
             </applications>
             <items/>
@@ -126,7 +126,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Network Interfaces</name>
+                                    <name>Cluster network interfaces</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -169,7 +169,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Network Interfaces</name>
+                                    <name>Cluster network interfaces</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -212,7 +212,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Network Interfaces</name>
+                                    <name>Cluster network interfaces</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -220,7 +220,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                         </item_prototype>
                         <item_prototype>
                             <name>{#CLUSTER}] Network interface {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -255,7 +255,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Network Interfaces</name>
+                                    <name>Cluster network interfaces</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -264,7 +264,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterNetworkInterface,State,{#ID}].str(&quot;Up&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterNetworkInterface,State,{#ID}].str(&quot;Up&quot;)}=0</expression>
                             <name>[{#CLUSTER}] Network interface {#NAME} is not up</name>
                             <url/>
                             <status>0</status>
@@ -273,7 +273,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                             <type>0</type>
                         </trigger_prototype>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:icmpping[{#ADDRESS}].max(#3)}=0</expression>
+                            <expression>{Template WSFC:icmpping[{#ADDRESS}].max(#3)}=0</expression>
                             <name>[{#CLUSTER}] Network interface {#NAME} is unavailable by ICMP</name>
                             <url/>
                             <status>0</status>
@@ -282,7 +282,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                             <type>0</type>
                         </trigger_prototype>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:icmppingloss[{#ADDRESS}].min(5m)}&gt;20</expression>
+                            <expression>{Template WSFC:icmppingloss[{#ADDRESS}].min(5m)}&gt;20</expression>
                             <name>[{#CLUSTER}] On network interface {#NAME} ping loss is too high</name>
                             <url/>
                             <status>0</status>
@@ -291,7 +291,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                             <type>0</type>
                         </trigger_prototype>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:icmppingsec[{#ADDRESS}].avg(5m)}&gt;0.15</expression>
+                            <expression>{Template WSFC:icmppingsec[{#ADDRESS}].avg(5m)}&gt;0.15</expression>
                             <name>[{#CLUSTER}] On network interface {#NAME} response time is too high</name>
                             <url/>
                             <status>0</status>
@@ -338,7 +338,7 @@ Requirement: wsfc.ps1 v.0.9</description>
                     <item_prototypes>
                         <item_prototype>
                             <name>[{#CLUSTER}] Network {#NAME} role</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -385,7 +385,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Networks</name>
+                                    <name>Cluster networks</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -393,7 +393,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Network {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -428,7 +428,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Networks</name>
+                                    <name>Cluster networks</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -437,7 +437,7 @@ The network is used to connect client systems and to carry internal cluster comm
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterNetwork,State,{#ID}].str(&quot;Up&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterNetwork,State,{#ID}].str(&quot;Up&quot;)}=0</expression>
                             <name>[{#CLUSTER}] Network {#NAME} is not up</name>
                             <url/>
                             <status>0</status>
@@ -484,7 +484,7 @@ The network is used to connect client systems and to carry internal cluster comm
                     <item_prototypes>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} assigned (used) memory</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>1</multiplier>
                             <snmp_oid/>
@@ -519,7 +519,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -527,7 +527,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} assigned vCPUs</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -562,7 +562,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -570,7 +570,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} offline services</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -605,7 +605,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -613,7 +613,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} offline VMs</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -648,7 +648,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -656,7 +656,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} online services</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -691,7 +691,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -699,7 +699,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} online VMs</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -734,7 +734,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -742,7 +742,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} processor load</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -777,7 +777,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -785,7 +785,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] Node {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -820,7 +820,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Cluster Nodes</name>
+                                    <name>Cluster nodes</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -829,7 +829,7 @@ The network is used to connect client systems and to carry internal cluster comm
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterNode,State,{#ID}].str(&quot;Up&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterNode,State,{#ID}].str(&quot;Up&quot;)}=0</expression>
                             <name>[{#CLUSTER}] Node {#NAME} is not up</name>
                             <url/>
                             <status>0</status>
@@ -865,7 +865,7 @@ The network is used to connect client systems and to carry internal cluster comm
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,ClusterNode,GenericService.Online,{#ID}]</key>
                                     </item>
                                 </graph_item>
@@ -877,7 +877,7 @@ The network is used to connect client systems and to carry internal cluster comm
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,ClusterNode,GenericService.Offline,{#ID}]</key>
                                     </item>
                                 </graph_item>
@@ -909,7 +909,7 @@ The network is used to connect client systems and to carry internal cluster comm
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,ClusterNode,VirtualMachine.Offline,{#ID}]</key>
                                     </item>
                                 </graph_item>
@@ -921,7 +921,7 @@ The network is used to connect client systems and to carry internal cluster comm
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,ClusterNode,VirtualMachine.Online,{#ID}]</key>
                                     </item>
                                 </graph_item>
@@ -931,7 +931,7 @@ The network is used to connect client systems and to carry internal cluster comm
                     <host_prototypes/>
                 </discovery_rule>
                 <discovery_rule>
-                    <name>Cluster Resources: Generic Services</name>
+                    <name>Cluster resources: generic services</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -965,7 +965,7 @@ The network is used to connect client systems and to carry internal cluster comm
                     <item_prototypes>
                         <item_prototype>
                             <name>[{#CLUSTER}] GS {#NAME} persistent state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1000,7 +1000,7 @@ The network is used to connect client systems and to carry internal cluster comm
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Generic Services</name>
+                                    <name>Cluster resource: generic services</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1008,7 +1008,7 @@ The network is used to connect client systems and to carry internal cluster comm
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] GS {#NAME} restart action</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1050,7 +1050,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Generic Services</name>
+                                    <name>Cluster resource: generic services</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1058,7 +1058,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] GS {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1093,7 +1093,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Generic Services</name>
+                                    <name>Cluster resource: generic services</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1102,7 +1102,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceGenericService,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceGenericService,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
                             <name>[{#CLUSTER}] Service {#NAME} is not online</name>
                             <url/>
                             <status>0</status>
@@ -1115,7 +1115,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <host_prototypes/>
                 </discovery_rule>
                 <discovery_rule>
-                    <name>Cluster Resources: IP Addresses</name>
+                    <name>Cluster resources: IP addresses</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -1149,7 +1149,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <item_prototypes>
                         <item_prototype>
                             <name>[{#CLUSTER}] IP address {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1184,7 +1184,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>IP Addresses</name>
+                                    <name>Cluster resource: IP addresses</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1193,7 +1193,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceIPAddress,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceIPAddress,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
                             <name>[{#CLUSTER}] IP address {#NAME} is not online</name>
                             <url/>
                             <status>0</status>
@@ -1206,7 +1206,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <host_prototypes/>
                 </discovery_rule>
                 <discovery_rule>
-                    <name>Cluster Resources: Network Names</name>
+                    <name>Cluster resources: network names</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -1240,7 +1240,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <item_prototypes>
                         <item_prototype>
                             <name>{#CLUSTER}] Network name {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1275,7 +1275,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Network Names</name>
+                                    <name>Cluster resource: network names</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1284,7 +1284,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceNetworkName,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceNetworkName,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
                             <name>[{#CLUSTER}] Network name {#NAME} is not online</name>
                             <url/>
                             <status>0</status>
@@ -1297,7 +1297,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <host_prototypes/>
                 </discovery_rule>
                 <discovery_rule>
-                    <name>Cluster Resources: Physical Disk</name>
+                    <name>Cluster resources: physical disk</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -1331,7 +1331,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <item_prototypes>
                         <item_prototype>
                             <name>[{#CLUSTER}] Physical disk {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1366,7 +1366,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Physical Disks</name>
+                                    <name>Cluster resource: physical disks</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1375,7 +1375,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourcePhysicalDisk,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourcePhysicalDisk,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
                             <name>[{#CLUSTER}] Physical disk {#NAME} is not online</name>
                             <url/>
                             <status>0</status>
@@ -1388,7 +1388,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <host_prototypes/>
                 </discovery_rule>
                 <discovery_rule>
-                    <name>Cluster Resources: Virtual Machines</name>
+                    <name>Cluster resources: virtual machines</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -1422,7 +1422,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                     <item_prototypes>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} check heartbeat</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1463,7 +1463,7 @@ The heartbeat is checked; if the heartbeat fails, a resource failure is signaled
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1471,7 +1471,7 @@ The heartbeat is checked; if the heartbeat fails, a resource failure is signaled
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} heartbeat</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1511,7 +1511,7 @@ The heartbeat is checked; if the heartbeat fails, a resource failure is signaled
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1519,7 +1519,7 @@ The heartbeat is checked; if the heartbeat fails, a resource failure is signaled
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} maintenance mode</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1554,7 +1554,7 @@ The heartbeat is checked; if the heartbeat fails, a resource failure is signaled
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1562,7 +1562,7 @@ The heartbeat is checked; if the heartbeat fails, a resource failure is signaled
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} migration failure reason</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1606,7 +1606,7 @@ The migration failed for some other reason.</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1614,7 +1614,7 @@ The migration failed for some other reason.</description>
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} migration progress</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1649,7 +1649,7 @@ The migration failed for some other reason.</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1657,7 +1657,7 @@ The migration failed for some other reason.</description>
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} migration state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1708,7 +1708,7 @@ An earlier migration attempt failed. The MigrationState property will retain thi
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1716,7 +1716,7 @@ An earlier migration attempt failed. The MigrationState property will retain thi
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} offline action</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1761,7 +1761,7 @@ The Windows guest operating system running in the VM is shut down forcibly.</des
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1769,7 +1769,7 @@ The Windows guest operating system running in the VM is shut down forcibly.</des
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} persistent state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1804,7 +1804,7 @@ The Windows guest operating system running in the VM is shut down forcibly.</des
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1812,7 +1812,7 @@ The Windows guest operating system running in the VM is shut down forcibly.</des
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} restart action</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1854,7 +1854,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1862,7 +1862,7 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} shutdown action</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1903,7 +1903,7 @@ The resource instance is marked as failed. The cluster service will respond to t
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1911,7 +1911,7 @@ The resource instance is marked as failed. The cluster service will respond to t
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} state</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -1946,7 +1946,7 @@ The resource instance is marked as failed. The cluster service will respond to t
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -1954,7 +1954,7 @@ The resource instance is marked as failed. The cluster service will respond to t
                         </item_prototype>
                         <item_prototype>
                             <name>[{#CLUSTER}] VM {#NAME} vmState</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -2017,7 +2017,7 @@ The VM is resuming from a paused state.</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
-                                    <name>Virtual Machines</name>
+                                    <name>Cluster resource: virtual machines</name>
                                 </application>
                             </applications>
                             <valuemap/>
@@ -2026,7 +2026,7 @@ The VM is resuming from a paused state.</description>
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceVirtualMachine,ClusterParameter.CheckHeartbeat,{#ID}].last(0)}=1</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceVirtualMachine,ClusterParameter.CheckHeartbeat,{#ID}].last(0)}=1</expression>
                             <name>[{#CLUSTER}] VM {#NAME} heartbeat controlled</name>
                             <url/>
                             <status>0</status>
@@ -2035,7 +2035,7 @@ The VM is resuming from a paused state.</description>
                             <type>0</type>
                         </trigger_prototype>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceVirtualMachine,VirtualMachine.SummaryInformation.Heartbeat,{#ID}].last(0)}&lt;&gt;2</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceVirtualMachine,VirtualMachine.SummaryInformation.Heartbeat,{#ID}].last(0)}&lt;&gt;2</expression>
                             <name>[{#CLUSTER}] VM {#NAME} heartbeat not OK</name>
                             <url/>
                             <status>0</status>
@@ -2044,7 +2044,7 @@ The VM is resuming from a paused state.</description>
                             <type>0</type>
                         </trigger_prototype>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceVirtualMachine,MaintenanceMode,{#ID}].last()}=1</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceVirtualMachine,MaintenanceMode,{#ID}].last()}=1</expression>
                             <name>[{#CLUSTER}] VM {#NAME} in maintenance mode</name>
                             <url/>
                             <status>0</status>
@@ -2053,7 +2053,7 @@ The VM is resuming from a paused state.</description>
                             <type>0</type>
                         </trigger_prototype>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceVirtualMachine,ClusterParameter.MigrationState,{#ID}].last()}&lt;&gt;0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceVirtualMachine,ClusterParameter.MigrationState,{#ID}].last()}&lt;&gt;0</expression>
                             <name>[{#CLUSTER}] VM {#NAME} in migration state</name>
                             <url/>
                             <status>0</status>
@@ -2062,7 +2062,7 @@ The VM is resuming from a paused state.</description>
                             <type>0</type>
                         </trigger_prototype>
                         <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterResourceVirtualMachine,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
+                            <expression>{Template WSFC:wsfc[Get,ClusterResourceVirtualMachine,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
                             <name>[{#CLUSTER}] VM {#NAME} is not online</name>
                             <url/>
                             <status>0</status>
@@ -2075,564 +2075,7 @@ The VM is resuming from a paused state.</description>
                     <host_prototypes/>
                 </discovery_rule>
                 <discovery_rule>
-                    <name>Cluster Shared Volumes</name>
-                    <type>0</type>
-                    <snmp_community/>
-                    <snmp_oid/>
-                    <key>wsfc[Discovery,ClusterSharedVolume]</key>
-                    <delay>600</delay>
-                    <status>0</status>
-                    <allowed_hosts/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <filter>
-                        <evaltype>0</evaltype>
-                        <formula/>
-                        <conditions/>
-                    </filter>
-                    <lifetime>7</lifetime>
-                    <description/>
-                    <item_prototypes>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} fault state</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.FaultState,{#ID}]</key>
-                            <delay>60</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>4</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>0</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description>Returns the fault state of the cluster shared volume.&#13;
-&#13;
-https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&#13;
-&#13;
-0 - No Faults (NoFaults)&#13;
-1 - Redirected Access (NoDirectIO)&#13;
-2 - No Access (NoAccess)&#13;
-4 - In Maintenance (Maintenence)</description>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} free space</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}]</key>
-                            <delay>60</delay>
-                            <history>7</history>
-                            <trends>90</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units>B</units>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>0</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description>Provides the total space available for the partition, in megabytes (megabytes or bytes?)</description>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} free space (%)</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.PercentFree,{#ID}]</key>
-                            <delay>60</delay>
-                            <history>7</history>
-                            <trends>90</trends>
-                            <status>0</status>
-                            <value_type>0</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>0</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} maintenance mode</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.MaintenanceMode,{#ID}]</key>
-                            <delay>3600</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>3</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} NTFS dirty flag</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsDirty,{#ID}]</key>
-                            <delay>60</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>4</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>0</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description>When the Dirty Flag is set (volume corruption detected), Windows must perform the chkdsk/F command on the volume when it next boots.</description>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} NTFS is compressed</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsCompressed,{#ID}]</key>
-                            <delay>3600</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>3</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description>NTFS volume is compressed or not</description>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} NTFS partition number is valid</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsPartitionNumberValid,{#ID}]</key>
-                            <delay>3600</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>3</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} NTFS partition size is valid</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsPartitionSizeValid,{#ID}]</key>
-                            <delay>3600</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>3</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} RedirectedAccess</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.RedirectedAccess,{#ID}]</key>
-                            <delay>60</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>3</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description>https://blogs.msdn.microsoft.com/clustering/2013/12/05/understanding-the-state-of-your-cluster-shared-volumes-in-windows-server-2012-r2/</description>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>[{#CLUSTER}] CSV {#NAME} state</name>
-                            <type>0</type>
-                            <snmp_community/>
-                            <multiplier>0</multiplier>
-                            <snmp_oid/>
-                            <key>wsfc[Get,ClusterSharedVolume,State,{#ID}]</key>
-                            <delay>60</delay>
-                            <history>7</history>
-                            <trends>365</trends>
-                            <status>0</status>
-                            <value_type>4</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <delta>0</delta>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <formula>1</formula>
-                            <delay_flex/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <data_type>0</data_type>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
-                            <applications>
-                                <application>
-                                    <name>Cluster Shared Volumes</name>
-                                </application>
-                            </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                        </item_prototype>
-                    </item_prototypes>
-                    <trigger_prototypes>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}].max(5m)}&lt;1G</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 1GB</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.PercentFree,{#ID}].last(0)}&lt;20</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 20%</name>
-                            <url/>
-                            <status>1</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}].max(5m)}&lt;30G</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 30G</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>3</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}].max(5m)}&lt;500M</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 500М</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>3</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.MaintenanceMode,{#ID}].last()}=1</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} in maintenance mode</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>1</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.FaultState,{#ID}].str(&quot;NoFaults&quot;)}=0</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} is fault</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>4</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} is not online</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsPartitionSizeValid,{#ID}].last()}&lt;&gt;0</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} partition size is invalid</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Template OS Windows Server Failover Cluster:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.RedirectedAccess,{#ID}].last()}&lt;&gt;0</expression>
-                            <name>[{#CLUSTER}] CSV {#NAME} redirected access activated</name>
-                            <url/>
-                            <status>0</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                        </trigger_prototype>
-                    </trigger_prototypes>
-                    <graph_prototypes/>
-                    <host_prototypes/>
-                </discovery_rule>
-                <discovery_rule>
-                    <name>Failover clusters</name>
+                    <name>Clusters</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -2666,7 +2109,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                     <item_prototypes>
                         <item_prototype>
                             <name>[{#NAME}] Assigned (Used) Memory</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>1</multiplier>
                             <snmp_oid/>
@@ -2709,7 +2152,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                         </item_prototype>
                         <item_prototype>
                             <name>[{#NAME}] Assigned vCPUs</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -2752,7 +2195,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                         </item_prototype>
                         <item_prototype>
                             <name>[{#NAME}] BackupInProgress</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -2795,7 +2238,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                         </item_prototype>
                         <item_prototype>
                             <name>[{#NAME}] FixQuorum</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -2838,7 +2281,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                         </item_prototype>
                         <item_prototype>
                             <name>[{#NAME}] Offline services</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -2881,7 +2324,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                         </item_prototype>
                         <item_prototype>
                             <name>[{#NAME}] Offline VMs</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -2924,7 +2367,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                         </item_prototype>
                         <item_prototype>
                             <name>[{#NAME}] Online services</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -2967,7 +2410,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                         </item_prototype>
                         <item_prototype>
                             <name>[{#NAME}] Online VMs</name>
-                            <type>0</type>
+                            <type>7</type>
                             <snmp_community/>
                             <multiplier>0</multiplier>
                             <snmp_oid/>
@@ -3037,7 +2480,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,Cluster,GenericService.Online,{#ID}]</key>
                                     </item>
                                 </graph_item>
@@ -3049,7 +2492,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,Cluster,GenericService.Offline,{#ID}]</key>
                                     </item>
                                 </graph_item>
@@ -3081,7 +2524,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,Cluster,VirtualMachine.Offline,{#ID}]</key>
                                     </item>
                                 </graph_item>
@@ -3093,13 +2536,570 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&
                                     <calc_fnc>4</calc_fnc>
                                     <type>0</type>
                                     <item>
-                                        <host>Template OS Windows Server Failover Cluster</host>
+                                        <host>Template WSFC</host>
                                         <key>wsfc[Count,Cluster,VirtualMachine.Online,{#ID}]</key>
                                     </item>
                                 </graph_item>
                             </graph_items>
                         </graph_prototype>
                     </graph_prototypes>
+                    <host_prototypes/>
+                </discovery_rule>
+                <discovery_rule>
+                    <name>Cluster shared volumes</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <snmp_oid/>
+                    <key>wsfc[Discovery,ClusterSharedVolume]</key>
+                    <delay>600</delay>
+                    <status>0</status>
+                    <allowed_hosts/>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <filter>
+                        <evaltype>0</evaltype>
+                        <formula/>
+                        <conditions/>
+                    </filter>
+                    <lifetime>7</lifetime>
+                    <description/>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} fault state</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.FaultState,{#ID}]</key>
+                            <delay>60</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>4</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>0</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>Returns the fault state of the cluster shared volume.&#13;
+&#13;
+https://msdn.microsoft.com/en-us/library/windows/desktop/ee342510(v=vs.85).aspx&#13;
+&#13;
+0 - No Faults (NoFaults)&#13;
+1 - Redirected Access (NoDirectIO)&#13;
+2 - No Access (NoAccess)&#13;
+4 - In Maintenance (Maintenence)</description>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} free space</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}]</key>
+                            <delay>60</delay>
+                            <history>7</history>
+                            <trends>90</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units>B</units>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>0</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>Provides the total space available for the partition, in megabytes (megabytes or bytes?)</description>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} free space (%)</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.PercentFree,{#ID}]</key>
+                            <delay>60</delay>
+                            <history>7</history>
+                            <trends>90</trends>
+                            <status>0</status>
+                            <value_type>0</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>0</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description/>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} maintenance mode</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.MaintenanceMode,{#ID}]</key>
+                            <delay>3600</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>3</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description/>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} NTFS dirty flag</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsDirty,{#ID}]</key>
+                            <delay>60</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>4</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>0</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>When the Dirty Flag is set (volume corruption detected), Windows must perform the chkdsk/F command on the volume when it next boots.</description>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} NTFS is compressed</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsCompressed,{#ID}]</key>
+                            <delay>3600</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>3</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>NTFS volume is compressed or not</description>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} NTFS partition number is valid</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsPartitionNumberValid,{#ID}]</key>
+                            <delay>3600</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>3</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description/>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} NTFS partition size is valid</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsPartitionSizeValid,{#ID}]</key>
+                            <delay>3600</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>3</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description/>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} RedirectedAccess</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.RedirectedAccess,{#ID}]</key>
+                            <delay>60</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>3</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>https://blogs.msdn.microsoft.com/clustering/2013/12/05/understanding-the-state-of-your-cluster-shared-volumes-in-windows-server-2012-r2/</description>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>[{#CLUSTER}] CSV {#NAME} state</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <multiplier>0</multiplier>
+                            <snmp_oid/>
+                            <key>wsfc[Get,ClusterSharedVolume,State,{#ID}]</key>
+                            <delay>60</delay>
+                            <history>7</history>
+                            <trends>365</trends>
+                            <status>0</status>
+                            <value_type>4</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <delta>0</delta>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <formula>1</formula>
+                            <delay_flex/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <data_type>0</data_type>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description/>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Cluster shared volumes</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                        </item_prototype>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}].max(5m)}&lt;1G</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 1GB</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.PercentFree,{#ID}].last(0)}&lt;20</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 20%</name>
+                            <url/>
+                            <status>1</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}].max(5m)}&lt;30G</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 30G</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>3</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.FreeSpace,{#ID}].max(5m)}&lt;500M</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} Free disk space is less than 500М</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>3</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.MaintenanceMode,{#ID}].last()}=1</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} in maintenance mode</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>1</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.FaultState,{#ID}].str(&quot;NoFaults&quot;)}=0</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} is fault</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>4</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} is not online</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.Partition.IsPartitionSizeValid,{#ID}].last()}&lt;&gt;1</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} partition size is not valid</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:wsfc[Get,ClusterSharedVolume,SharedVolumeInfo.RedirectedAccess,{#ID}].last()}&lt;&gt;0</expression>
+                            <name>[{#CLUSTER}] CSV {#NAME} redirected access activated</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                    </trigger_prototypes>
+                    <graph_prototypes/>
                     <host_prototypes/>
                 </discovery_rule>
             </discovery_rules>
