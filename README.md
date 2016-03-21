@@ -22,8 +22,6 @@ Supported objects:
 - _ClusterSharedVolume_ - WSFC Shared Volumes;
 - _ClusterQuorum_ - WSFC cluster's quorum.
 
-Zabbix's LLD available to all objects;
-
 Virtual keys for 'Cluster', 'ClusterNode' objects:
 - _VirtualMachine.Online_ - failover cluster's resource 'Virtual Machine' in Online state;
 - _VirtualMachine.Offline_ - ... in Offline state;
