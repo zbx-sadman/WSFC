@@ -1,7 +1,7 @@
 ## WSFC Miner 
 This is a little Powershell script help to fetch metric's values from Windows Server Failover Cluster (WSFC).
 
-Actual release 1.0.0
+Actual release 1.0.1
 
 Tested on Windows Server 2008 R2 SP1, Powershell 2.0
 
@@ -90,5 +90,6 @@ In template used Item's type _Zabbix Agent (active)_. You must set up _ServerAct
 - If you use non-english (for example Russian Cyrillic) symbols in VM's names and want to get correct UTF-8 on Zabbix Server side, then you must add _-consoleCP **your_native_codepage**_ parameter to command line. For example to convert from Russian Cyrillic codepage (CP866), use _powershell -File C:\zabbix\scripts\wsfc.ps1 -Action "$1" -Object "$2" -Key "$3" -Id "$4" -ErrorCode "$5" -consoleCP CP866_;
 - To leave console default width while run script use _-defaultConsoleWidth_ option.
 - If you get Zabbix's "Should be JSON" - try to increase cols in _mode con cols=255_ command inside _wsfc.ps1_. Powershell use console width to format output JSON-lines and can break its. 
+- With ClusterNetworkInterface discovery you can use {#NETWORKADDRESS} to filter non-routables networks for exclude non-pingable IP addresses to avoid switching related items to unsupported state;
 
 Beware: frequent requests to PowerShell script eat CPU and increase Load. To avoid it - don't use small update intervals with Zabbix's Data Items and disable unused.
