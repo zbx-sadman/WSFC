@@ -83,6 +83,9 @@ Actions
 **Note**
 Do not try import Zabbix v2.4 template to Zabbix _pre_ v2.4. You need to edit .xml file and make some changes at discovery_rule - filter tags area and change _#_ to _<>_ in trigger expressions. I will try to make template to old Zabbix.
 
+**Note**
+In template used Item's type _Zabbix Agent (active)_. You must set up _ServerActive_ directive of Zabbix Agent or change Item's type to _Zabbix Agent_. In this case number of pollers of Zabbix Server must be increased, because any run of PowerShell script will delay poller thread to 2 sec (on my hardware).
+
 ###Hints
 - To see keys, run script without "-Key" option: _powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File C:\zabbix\scripts\wsfc.ps1 -Action "Get" -Object "**Object**"_ \[-Key "{SummaryInformation.VirtualMachine | ClusterParameter}"\]. Note that not all objects have related metrics in ClusterParameter & SummaryInformation tables (try use this keys with 'ClusterResourceVirtualMachine' object for test). You can refer to MSDN ;)
 - Please read descrition to Discovery Rules and Items to find helpful info (links to MSDN pages, that describe metrics);
