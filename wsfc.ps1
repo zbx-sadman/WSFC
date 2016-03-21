@@ -6,7 +6,7 @@
         Return Microsoft Server Failover Cluster's metrics value, sum & count selected objects, make LLD-JSON for Zabbix
 
     .NOTES  
-        Version: 1.0.0
+        Version: 1.0.1
         Name: WSFC Miner
         Author: zbx.sadman@gmail.com
         DateCreated: 18MAR2016
@@ -198,8 +198,8 @@ Function PrepareTo-Zabbix {
             Default           { $DoQuote = $True; }
          }
          # Normalize String object
-         $Object = $( If ($JSONCompatible) { $Object.ToString() } else { $Object | Out-String }).Trim();
-         
+         $Object = $( If ($JSONCompatible) { $Object.ToString().Trim() } else { Out-String -InputObject (Format-List -InputObject $Object -Property *) });         
+
          If (!$NoEscape) { 
             ForEach ($Symbol in $EscapedSymbols) { 
                $Object = $Object.Replace($Symbol, "\$Symbol");
@@ -320,7 +320,7 @@ Function Exit-WithMessage {
 
 Function Get-ClusterResourceList { 
    Param (
-      [Parameter(Mandatory = $True, ValueFromPipeline = $True)] 
+      [Parameter(ValueFromPipeline = $True)] 
       [PSObject]$InputObject, 
       [Parameter(Mandatory = $False)] 
       [string]$ResourceType
@@ -362,9 +362,9 @@ Function Get-ClusterResourceList {
 
 Function Get-MsvmSummaryInformation { 
   Param (
-         [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
+         [Parameter(ValueFromPipeline = $True)] 
          [PSObject]$InputObject, 
-         [Parameter(Mandatory = $true)] 
+         [Parameter(Mandatory = $True)] 
          [string]$ResourceType
         ); 
   # Get list of 'VM' cluster resources related to Object (Cluster, Clusternode, one VM)
@@ -438,7 +438,16 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
          PropertyEqualOrAny -InputObject (Get-ClusterNetwork -InputObject $Cluster) -Property ID -Value $Id
      }
      'ClusterNetworkInterface' { 
-         PropertyEqualOrAny -InputObject (Get-ClusterNetworkInterface -InputObject $Cluster) -Property ID -Value $Id
+         $ClusterNetworks = Get-ClusterNetwork -InputObject $Cluster;
+         $ClusterNetworkInterfaces = $( ForEach ($ClusterNetwork in $ClusterNetworks) {
+            If ($Null -Eq $ClusterNetwork) { Continue; }
+            ForEach ($ClusterNetworkInterface in (Get-ClusterNetworkInterface -Network $ClusterNetwork.Name)) {
+               If ($Null -Eq $ClusterNetworkInterface) { Continue; }
+               Add-Member -InputObject $ClusterNetworkInterface -MemberType NoteProperty -Name "NetworkAddress" -Value $ClusterNetwork.Address;
+               $ClusterNetworkInterface
+           }
+         });
+         PropertyEqualOrAny -InputObject ($ClusterNetworkInterfaces) -Property ID -Value $Id
      }
      'ClusterResourceGenericService' { 
          PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_GS) -Property ID -Value $Id
@@ -537,7 +546,7 @@ switch ($Action) {
           'Cluster'                       { $ObjectProperties = @("ID", "NAME"); }
           'ClusterNode'                   { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE"); }
           'ClusterNetwork'  	          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
-          'ClusterNetworkInterface'       { $ObjectProperties = @("ID", "CLUSTER", "NODE", "NAME", "STATE", "NETWORK", "ADDRESS"); }
+          'ClusterNetworkInterface'       { $ObjectProperties = @("ID", "CLUSTER", "NODE", "NAME", "STATE", "NETWORK", "NETWORKADDRESS", "ADDRESS"); }
           'ClusterResourceGenericService' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourceVirtualMachine' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourcePhysicalDisk'   { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
@@ -555,13 +564,8 @@ switch ($Action) {
       If ($Null -Eq $Objects) {
          Exit-WithMessage -Message "No objects in collection" -ErrorCode $ErrorCode;
       }
-      If ($Keys) { 
          Write-Verbose "$(Get-Date) Getting metric related to key: '$Key'";
          $Result = PrepareTo-Zabbix -InputObject (Get-Metric -InputObject $Objects -Keys $Keys) -ErrorCode $ErrorCode;
-      } Else { 
-         Write-Verbose "$(Get-Date) Getting metric list due metric's Key not specified";
-         $Result = Out-String -InputObject ($Objects);
-      };
    }
    # Get-Metric can return an array of objects. In this case need to take each item and add its to $r
    'Sum' {
