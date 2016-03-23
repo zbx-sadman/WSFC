@@ -3,9 +3,10 @@ This is a little Powershell script help to fetch metric's values from Windows Se
 
 Actual release 1.2.0
 
-Tested on Windows Server 2008 R2 SP1, Powershell 2.0
-
-
+Tested on:
+- Production mode: Windows Server 2008 R2 SP1, Powershell 2;
+- Non-production mode: Windows Server 2012 R2, Powershell 4.
+ 
 Supported objects:
 
 - _Cluster_ - Windows Server Failover Cluster (WSFC);

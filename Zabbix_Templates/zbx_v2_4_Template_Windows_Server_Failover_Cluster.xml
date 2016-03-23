@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>2.0</version>
-    <date>2016-03-23T11:29:08Z</date>
+    <date>2016-03-23T12:59:42Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -1242,9 +1242,9 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <history>7</history>
                             <trends>90</trends>
                             <status>0</status>
-                            <value_type>3</value_type>
+                            <value_type>0</value_type>
                             <allowed_hosts/>
-                            <units/>
+                            <units>%</units>
                             <delta>0</delta>
                             <snmpv3_contextname/>
                             <snmpv3_securityname/>
@@ -1285,9 +1285,9 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <history>7</history>
                             <trends>90</trends>
                             <status>0</status>
-                            <value_type>3</value_type>
+                            <value_type>0</value_type>
                             <allowed_hosts/>
-                            <units/>
+                            <units>s</units>
                             <delta>0</delta>
                             <snmpv3_contextname/>
                             <snmpv3_securityname/>
@@ -1328,9 +1328,9 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                             <history>7</history>
                             <trends>90</trends>
                             <status>0</status>
-                            <value_type>3</value_type>
+                            <value_type>0</value_type>
                             <allowed_hosts/>
-                            <units/>
+                            <units>s</units>
                             <delta>0</delta>
                             <snmpv3_contextname/>
                             <snmpv3_securityname/>
@@ -1408,6 +1408,33 @@ Restart the resource after a failure. If the resource exceeds its restart thresh
                         <trigger_prototype>
                             <expression>{Template WSFC:wsfc[Get,ClusterResourceIPAddress,State,{#ID}].str(&quot;Online&quot;)}=0</expression>
                             <name>[{#CLUSTER}] IP address {#NAME} is not online</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:icmpping[{#ADDRESS},].max(#3)}=0</expression>
+                            <name>[{#CLUSTER}] IP address {#NAME} is unavailable by ICMP</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>3</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:icmppingloss[{#ADDRESS},].min(5m)}&gt;20</expression>
+                            <name>[{#CLUSTER}] IP address {#NAME} ping loss is too high</name>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template WSFC:icmppingsec[{#ADDRESS},].avg(5m)}&gt;0.15</expression>
+                            <name>[{#CLUSTER}] IP address {#NAME} response time is too high</name>
                             <url/>
                             <status>0</status>
                             <priority>2</priority>
