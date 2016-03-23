@@ -1,7 +1,7 @@
 ## WSFC Miner 
 This is a little Powershell script help to fetch metric's values from Windows Server Failover Cluster (WSFC).
 
-Actual release 1.0.1
+Actual release 1.2.0
 
 Tested on Windows Server 2008 R2 SP1, Powershell 2.0
 
@@ -13,6 +13,7 @@ Supported objects:
 - _ClusterNetwork_ - WSFC Network;
 - _ClusterNetworkInterface_ - failover cluster's network adapter;
 - _ClusterAvailableDisk_ - WSFC Available (unused) Disk resources. That disk can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.;
+- _ClusterResourceDHCPService_ - WSFC resource 'DHCP Service';
 - _ClusterResourceGenericService_ - WSFC resource 'Generic Service';
 - _ClusterResourceVirtualMachine_ - WSFC resource 'Virtual Machine';
 - _ClusterResourceVirtualMachineConfiguration_ - WSFC resource 'Virtual Machine Configuration';
@@ -62,21 +63,45 @@ Actions
 
 
 ###How to use with Zabbix
-1. Make unsigned .ps1 scripts executable at all time with _powershell.exe -command "Set-ExecutionPolicy RemoteSigned"_ or at once with _-ExecutionPolicy_ command line option;
-2. If you still use non-clustered Zabbix Agent on any clusternode - be sure that its ListenIP not 0.0.0.0. Otherwise you can sometime get error 1067 while migrate clustered Zabbix Agent due its IP may be already used by local Zabbix Agent;
-3. Create copy of Zabbix Agent config for using with clustered Zabbix Agent (_zabbix\_agentd\_WSFC-A.conf_ for example); 
-4. Set Zabbix Agent's / Server's _Timeout_ to more that 3 sec (may be 10 or 30);
-5. Add to _zabbix\_agentd\_WSFC-A.conf_ this string: _UserParameter=wsfc[*], powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File C:\zabbix\scripts\wsfc.ps1 -Action "$1" -Object "$2" -Key "$3" -Id "$4" -ErrorCode $5_ ;
-6. Use with _zabbix\_agentd\_WSFC-A.conf_ params: _Hostname=wsfc-a.mynet.local_ and _ListenIP=192.168.0.69_, where FDQN-hostname is name what you want use as host-record on Zabbix Server and IP-address is address that you plan to use on step 10;
-7. Put _wsfc.ps1_ to _C:\zabbix\scripts_ dir and _zabbix\_agentd\_WSFC-A.conf_ to _C:\zabbix_ dir on all cluster nodes. Also you can use Windows Share if you want; 
-8. Create new (double) Zabbix service on every node with command: _zabbix_agentd.exe -c c:\zabbix\zabbix\_agentd\_WSFC-A.conf -i **-m**_. Do not start new service - its will auto-started by WSFC on service's Owner node;
-9. If you need to use _*.SummaryInformation.*_ metrics, that you must change Clustered Zabbix service account from "Local System" to any account, that have local admin rights to use FailoverClusters Cmdlet's and have rights to make WMI-queries to all cluster nodes over network. Otherwise you will got script error;
-10. Create new "Generic Service" for your cluster with Failover Cluster MMC, assign to its an IP-address from step 6 and start its;
-11. Import [template](https://github.com/zbx-sadman/WSFC/tree/master/Zabbix_Templates) to Zabbix Server;
-12. Create new "WSFC-A Cluster" (or "MyCluster" for example) host on Zabbix server. Its must have hostname and IP-address from step 6;
-13. Think twice before link Template to host and disable discovery rules that not so important (may be "Virtual Machines", "Generic Services", "Cluster Networks"). Otherwise u can get over 9000% CPU load with PowerShell calls;
-14. Pray and link template;
-15. Enjoy.
+I recommend start use WSFC Miner as non-clustered service, tune it with Zabbix and make its clustered then.
+
+####Use as non-clustered Service
+1. Include [zbx_wsfc.conf](https://github.com/zbx-sadman/WSFC/tree/master/Zabbix_Templates/zbx_wsfc.conf) to Zabbix Agent config on any cluster node;
+2. Put _wsfc.ps1_ to _C:\zabbix\scripts_ dir. If you want to place script to other directory, you must edit _zbx\_wsfc.conf_ to properly set script's path; 
+3. Set Zabbix Agent's / Server's _Timeout_ to more that 3 sec (may be 10 or 30);
+4. If you need to use _*.SummaryInformation.*_ metrics - you must change Zabbix Service account from "Local System" to any account, 
+   that have local admin rights to use FailoverClusters Cmdlet's and have rights to make WMI-queries to all cluster nodes over network. 
+   Otherwise you will got script error;
+5. Import [template](https://github.com/zbx-sadman/WSFC/tree/master/Zabbix_Templates) to Zabbix Server;
+6. Think twice before link Template to host and disable discovery rules that not so important (may be "Virtual Machines", "Generic Services", 
+   "Cluster Networks"). Otherwise u can get over 9000% CPU load with PowerShell calls;
+7. Pray and link template;
+8. Enjoy.
+
+####Use as failover Generic Service
+1. If you want use local (non-clustered) and failiver (clustered) Zabbix Agent at the same time - you must to change Zabbix Agent's directive ListenIP from
+   _0.0.0.0_ to unique interface address. Otherwise you can sometime get error 1067 when clustered Zabbix Agent will migrate. This is due first started 
+   instance of Agent bind to all available addresses and second instance just exit when started;
+2. Create copy of Zabbix Agent config (call it _zabbix\_agentd\_WSFC-A.conf_ for example) on the one cluster node; 
+3. Include [zbx_wsfc.conf](https://github.com/zbx-sadman/WSFC/tree/master/Zabbix_Templates/zbx_wsfc.conf) to Zabbix Agent config, if you have not done this before;
+4. Choose new IP-address and domain name for using with Generic Service. It's should not be Cluster's IP and Hostname. 
+   Change ListenIP & Hostname directive to new values in _zabbix\_agentd\_WSFC-A.conf_;
+5. Put _wsfc.ps1_ and _zabbix\_agentd\_WSFC-A.conf_ to every node in cluster (or try to use Windows Shares); 
+6. On every node deinstall service of local Zabbix Agent and install it again with **-m** key 
+   (zabbix_agentd.exe -c ... -x, zabbix_agentd.exe -c ... -d, zabbix_agentd.exe -c ... -i -m, zabbix_agentd.exe -c ... -s -m);
+7. On every node install second Zabbix Agent's service with _zabbix\_agentd\_WSFC-A.conf_ and **-m** key 
+   (zabbix_agentd.exe -c ..._zabbix\_agentd\_WSFC-A.conf_ -i -m). Don't start that service manually - its will auto-started by WSFC on service's Owner node;
+8. If you need to use _*.SummaryInformation.*_ metrics - you must change Zabbix Service account from "Local System" to any account, 
+   that have local admin rights to use FailoverClusters Cmdlet's and have rights to make WMI-queries to all cluster nodes over network.
+   Otherwise you will got script error;
+9. Create new "Generic Service" for your cluster with Failover Cluster MMC, assign to its an IP-address and hostname, which was defined on step 4;
+10. Import [template](https://github.com/zbx-sadman/WSFC/tree/master/Zabbix_Templates) to Zabbix Server;
+11. Think twice before link Template to host and disable discovery rules that not so important (may be "Virtual Machines", "Generic Services", 
+   "Cluster Networks"). Otherwise u can get over 9000% CPU load with PowerShell calls;
+12. On Zabbix server create new host with IP-address and hostname from step 4;
+13. Pray and link template;
+14. Start Generic Service, that you create on step 9 with with Failover Cluster MMC;
+15. Enjoy. May be.
 
 **Note**
 Do not try import Zabbix v2.4 template to Zabbix _pre_ v2.4. You need to edit .xml file and make some changes at discovery_rule - filter tags area and change _#_ to _<>_ in trigger expressions. I will try to make template to old Zabbix.
@@ -85,11 +110,19 @@ Do not try import Zabbix v2.4 template to Zabbix _pre_ v2.4. You need to edit .x
 In template used Item's type _Zabbix Agent (active)_. You must set up _ServerActive_ directive of Zabbix Agent or change Item's type to _Zabbix Agent_. In this case number of pollers of Zabbix Server must be increased, because any run of PowerShell script will freeze poller thread to 2 sec (on my hardware).
 
 ###Hints
-- To see keys, run script without "-Key" option: _powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File C:\zabbix\scripts\wsfc.ps1 -Action "Get" -Object "**Object**"_ \[-Key "{SummaryInformation.VirtualMachine | ClusterParameter}"\]. Note that not all objects have related metrics in ClusterParameter & SummaryInformation tables (try use this keys with 'ClusterResourceVirtualMachine' object for test). You can refer to MSDN ;)
+- To see keys, run script without **-Key** option: 
+  _powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File "...\wsfc.ps1" -Action "Get" -Object "**Object**"_ \[-Key "{SummaryInformation.VirtualMachine | ClusterParameter}"\]. 
+  Note that not all objects have related metrics in ClusterParameter & SummaryInformation tables (try use this keys with 'ClusterResourceVirtualMachine' object for test). 
+  You can refer to MSDN for information;)
 - Please read descrition to Discovery Rules and Items to find helpful info (links to MSDN pages, that describe metrics);
-- If you use non-english (for example Russian Cyrillic) symbols in VM's names and want to get correct UTF-8 on Zabbix Server side, then you must add _-consoleCP **your_native_codepage**_ parameter to command line. For example to convert from Russian Cyrillic codepage (CP866), use _powershell -File C:\zabbix\scripts\wsfc.ps1 -Action "$1" -Object "$2" -Key "$3" -Id "$4" -ErrorCode "$5" -consoleCP CP866_;
-- To leave console default width while run script use _-defaultConsoleWidth_ option.
-- If you get Zabbix's "Should be JSON" - try to increase cols in _mode con cols=255_ command inside _wsfc.ps1_. Powershell use console width to format output JSON-lines and can break its. 
-- With ClusterNetworkInterface discovery you can use {#NETWORKADDRESS} to filter non-routables networks for exclude non-pingable IP addresses to avoid switching related items to unsupported state;
+- If you use non-english (for example Russian Cyrillic) symbols in VM's names and want to get correct UTF-8 on Zabbix Server side, 
+  then you must add _-consoleCP **your_native_codepage**_ parameter to command line. For example to convert from Russian Cyrillic codepage (CP866), 
+  use _powershell -File "...\wsfc.ps1" ... -consoleCP CP866_
+- For debug in standalone mode use _-defaultConsoleWidth_ option to leave console default width while run script and
+   _-Verbose_ to get additional processing information;
+- If you get Zabbix's "Should be JSON" - try to increase the number value in CONSOLE_WIDTH constant variable inside _wsfc.ps1_. 
+  Powershell use console width to format output JSON-lines and can break its. 
+- With ClusterNetworkInterface discovery you can use {#NETWORKADDRESS} to filter non-routables networks for exclude non-pingable IP addresses to avoid 
+  switching related items to unsupported state.
 
-Beware: frequent requests to PowerShell script eat CPU and increase Load. To avoid it - don't use small update intervals with Zabbix's Data Items and disable unused.
+**Beware** frequent requests to PowerShell script eat CPU and increase Load. To avoid it - don't use small update intervals with Zabbix's Data Items and disable unused.

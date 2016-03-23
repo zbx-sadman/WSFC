@@ -6,11 +6,12 @@
         Return Microsoft Server Failover Cluster's metrics value, sum & count selected objects, make LLD-JSON for Zabbix
 
     .NOTES  
-        Version: 1.0.1
+        Version: 1.2.0
         Name: WSFC Miner
         Author: zbx.sadman@gmail.com
-        DateCreated: 18MAR2016
+        DateCreated: 23MAR2016
         Testing environment: Windows Server 2008R2 SP1, Powershell 2.0
+        Non-production testing environment: Windows Server 2012 R2, PowerShell 4
 
     .LINK  
         https://github.com/zbx-sadman
@@ -28,6 +29,7 @@
             ClusterNode - failover cluster's node;
             ClusterNetwork - failover cluster's network;
             ClusterNetworkInterface - failover cluster's network adapter;
+            ClusterResourceDHCPService - failover cluster's resource 'DHCP Service';
             ClusterResourceGenericService - failover cluster's resource 'Generic Service';
             ClusterResourceVirtualMachine - failover cluster's resource 'Virtual Machine';
             ClusterResourceVirtualMachineConfiguration - failover cluster's resource 'Virtual Machine Configuration';
@@ -50,8 +52,8 @@
             GenericService.Online  - failover cluster's resource 'Generic Service' in Online state;
             GenericService.Offline - ... in Offline state;
 
-        Virtual keys for all object which linked to ClusterParameter (see Get-ClusterParameter cndlet) table
-            ClusterParameter.<metric> - object's metric from ClusterParameter table
+        Virtual keys for all object which linked to private cluster objects properties (see Get-ClusterParameter cmdlet)
+            ClusterParameter.<metric> - private cluster object's metric
 
     .PARAMETER ID
         Used to select only one item from collection
@@ -108,7 +110,7 @@ Param (
    [String]$Action,
    [String]$ClusterName,
    [Parameter(Mandatory = $False)]
-   [ValidateSet('Cluster', 'ClusterNode', 'ClusterNetwork', 'ClusterNetworkInterface', 'ClusterResourceGenericService', 
+   [ValidateSet('Cluster', 'ClusterNode', 'ClusterNetwork', 'ClusterNetworkInterface', 'ClusterResourceDHCPService', 'ClusterResourceGenericService', 
                 'ClusterResourceVirtualMachine', 'ClusterResourceVirtualMachineConfiguration', 'ClusterResourceNetworkName', 'ClusterResourceIPAddress', 
                 'ClusterResourcePhysicalDisk', 'ClusterAvailableDisk', 'ClusterSharedVolume')]
    [Alias('Object')]
@@ -132,6 +134,7 @@ Param (
 # Width of console to stop breaking JSON lines
 Set-Variable -Option Constant -Name "CONSOLE_WIDTH" -Value 512
 
+Set-Variable -Option Constant -Name "RES_DHCPS"  -Value 'DHCP Service'
 Set-Variable -Option Constant -Name "RES_VM"  -Value 'Virtual Machine'
 Set-Variable -Option Constant -Name "RES_GS"  -Value 'Generic Service'
 Set-Variable -Option Constant -Name "RES_PD"  -Value 'Physical Disk'
@@ -139,7 +142,9 @@ Set-Variable -Option Constant -Name "RES_NN"  -Value 'Network Name'
 Set-Variable -Option Constant -Name "RES_IA"  -Value 'IP Address'
 Set-Variable -Option Constant -Name "RES_VMC" -Value 'Virtual Machine Configuration'
 
-Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization' 
+# Enumerate OS versions. [int][OSVersions]::DumpVer equal 0 due [int][OSVersions]::AnyNonexistItem equal 0 too
+#Add-Type -TypeDefinition "public enum OSVersion { DumpVer, WS2008, WS2008R2, WS2012, WS2012R2}";
+Add-Type -TypeDefinition "public enum OSVersion { DumpVer, v60, v61, v62, v63}";
 
 ####################################################################################################################################
 #
@@ -400,6 +405,33 @@ Function Get-MsvmSummaryInformation {
   } # Foreach
 }
 
+Write-Verbose "$(Get-Date) Checking OS Windows version";
+
+$OSVersion = "v$([Environment]::OSVersion.Version.Major)$([Environment]::OSVersion.Version.Minor)"
+
+$OSName = $( Switch ($OSVersion -As [OSVersion]) {
+   'v60' { # Windows Vista / Windows Server 2008
+       Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization' 
+       "Windows Vista / Windows Server 2008"
+   }
+   'v61' { # Windows 7 / Windows Server 2008 R2
+       Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization' 
+       "Windows 7 / Windows Server 2008 R2"
+   }
+   'v62' { # Windows 8 / Windows Server 2012
+       Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization\v2' 
+       "Windows 8 / Windows Server 2012"
+   }
+   'v63' { # Windows 8.1 / Windows Server 2012 R2
+       Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization\v2' 
+       "Windows 8.1 / Windows Server 2012 R2"
+   }
+   Default { # Incompatible OS version
+      Exit-WithMessage -Message "Incompatible OS version" -ErrorCode $ErrorCode;
+   }
+});
+
+Write-Verbose "$(Get-Date) Work under $OSName";
 Write-Verbose "$(Get-Date) Import 'FailoverClusters' module";
 
 # Import the cmdlets
@@ -444,10 +476,16 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
             ForEach ($ClusterNetworkInterface in (Get-ClusterNetworkInterface -Network $ClusterNetwork.Name)) {
                If ($Null -Eq $ClusterNetworkInterface) { Continue; }
                Add-Member -InputObject $ClusterNetworkInterface -MemberType NoteProperty -Name "NetworkAddress" -Value $ClusterNetwork.Address;
+               # Split IPv6 Address & Zone index by % sign
+               $Address, $IPv6ZoneIndex = $ClusterNetworkInterface.Address.ToString().Split('%')
+               Add-Member -Force -InputObject $ClusterNetworkInterface -MemberType NoteProperty -Name "Address" -Value $Address;
                $ClusterNetworkInterface
            }
          });
          PropertyEqualOrAny -InputObject ($ClusterNetworkInterfaces) -Property ID -Value $Id
+     }
+     'ClusterResourceDHCPService' { 
+         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_DHCPS) -Property ID -Value $Id
      }
      'ClusterResourceGenericService' { 
          PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_GS) -Property ID -Value $Id
@@ -462,7 +500,12 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
          PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_NN) -Property ID -Value $Id
      }
      'ClusterResourceIPAddress' {
-         PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_IA) -Property ID -Value $Id
+         $IPAddresses = PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_IA) -Property ID -Value $Id
+         ForEach ($IPAddress in $IPAddresses) {
+            If ($Null -Eq $IPAddress) { Continue; }
+            Add-Member -InputObject $IPAddress -MemberType NoteProperty -Name "Address" -Value (Get-ClusterParameter -InputObject $IPAddress -Name 'Address').Value;
+            $IPAddresses
+         }
      }
      'ClusterResourceVirtualMachineConfiguration' {
          PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_VMC) -Property ID -Value $Id
@@ -476,6 +519,13 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
             If ($Null -Eq $CSV) { Continue; }
             Add-Member -InputObject $CSV -MemberType NoteProperty -Name "Cluster" -Value $Cluster.Name;
             Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FriendlyVolumeName" -Value ($($CSV.SharedVolumeInfo).FriendlyVolumeName);
+            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FileSystem" -Value ($($CSV.SharedVolumeInfo.Partition).FileSystem);
+            If (($OSVersion -As [OSVersion]) -Ge [OSVersion]::v63) {
+               $CSVState = Get-ClusterSharedVolumeState -InputObject $CSV;
+               Add-Member -InputObject $CSV -MemberType NoteProperty -Name "StateInfo" -Value $CSVState.StateInfo;
+               Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FileSystemRedirectedIOReason" -Value $CSVState.FileSystemRedirectedIOReason;
+               Add-Member -InputObject $CSV -MemberType NoteProperty -Name "BlockRedirectedIOReason" -Value $CSVState.BlockRedirectedIOReason;
+            }
             $CSV
          }
      }
@@ -547,14 +597,15 @@ switch ($Action) {
           'ClusterNode'                   { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE"); }
           'ClusterNetwork'  	          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
           'ClusterNetworkInterface'       { $ObjectProperties = @("ID", "CLUSTER", "NODE", "NAME", "STATE", "NETWORK", "NETWORKADDRESS", "ADDRESS"); }
+          'ClusterResourceDHCPService'    { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourceGenericService' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourceVirtualMachine' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourcePhysicalDisk'   { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourceNetworkName'    { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
-          'ClusterResourceIPAddress'      { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
+          'ClusterResourceIPAddress'      { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE", "ADDRESS"); }
           'ClusterResourceVirtualMachineConfiguration' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterAvailableDisk'          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
-          'ClusterSharedVolume'           { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME"); }
+          'ClusterSharedVolume'           { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME", "FILESYSTEM"); }
        }  
        Write-Verbose "$(Get-Date) Generating LLD JSON";
        $Result =  Make-JSON -InputObject $Objects -ObjectProperties $ObjectProperties -Pretty;
