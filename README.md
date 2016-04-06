@@ -112,13 +112,13 @@ In template used Item's type _Zabbix Agent (active)_. You must set up _ServerAct
 
 ###Hints
 - To see keys, run script without **-Key** option: 
-  _powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File "...\wsfc.ps1" -Action "Get" -Object "**Object**"_ \[-Key "{SummaryInformation.VirtualMachine | ClusterParameter}"\]. 
+  _... "wsfc.ps1" -Action "Get" -Object "**Object**"_ \[-Key "{SummaryInformation.VirtualMachine | ClusterParameter}"\]. 
   Note that not all objects have related metrics in ClusterParameter & SummaryInformation tables (try use this keys with 'ClusterResourceVirtualMachine' object for test). 
   You can refer to MSDN for information;)
 - Please read descrition to Discovery Rules and Items to find helpful info (links to MSDN pages, that describe metrics);
 - If you use non-english (for example Russian Cyrillic) symbols in VM's names and want to get correct UTF-8 on Zabbix Server side, 
   then you must add _-consoleCP **your_native_codepage**_ parameter to command line. For example to convert from Russian Cyrillic codepage (CP866), 
-  use _powershell -File "...\wsfc.ps1" ... -consoleCP CP866_
+  use _... "wsfc.ps1" ... -consoleCP CP866_
 - For debug in standalone mode use _-defaultConsoleWidth_ option to leave console default width while run script and
    _-Verbose_ to get additional processing information;
 - If you get Zabbix's "Should be JSON" - try to increase the number value in CONSOLE_WIDTH constant variable inside _wsfc.ps1_. 
