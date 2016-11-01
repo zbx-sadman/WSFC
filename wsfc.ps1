@@ -260,13 +260,13 @@ Function Make-JSON {
       ForEach ($Object in $InputObject) {
          # Skip object when its $Null
          If ($Null -Eq $Object) { Continue; }
-
          If (-Not $itFirstObject) { $Result += ",$CRLF"; }
          $itFirstObject=$False;
          $Result += "$Tab$Tab{$Space"; 
          $itFirstProperty = $True;
          # Process properties. No comma printed after last item
          ForEach ($Property in $ObjectProperties) {
+            If ([string]::IsNullOrEmpty($Object.$Property)) { Continue; }
             If (-Not $itFirstProperty) { $Result += ",$Space" }
             $itFirstProperty = $False;
             $Result += "`"{#$Property}`":$(PrepareTo-Zabbix -InputObject $Object.$Property -JSONCompatible)";
@@ -615,8 +615,8 @@ switch ($Action) {
       If ($Null -Eq $Objects) {
          Exit-WithMessage -Message "No objects in collection" -ErrorCode $ErrorCode;
       }
-         Write-Verbose "$(Get-Date) Getting metric related to key: '$Key'";
-         $Result = PrepareTo-Zabbix -InputObject (Get-Metric -InputObject $Objects -Keys $Keys) -ErrorCode $ErrorCode;
+     Write-Verbose "$(Get-Date) Getting metric related to key: '$Key'";
+     $Result = PrepareTo-Zabbix -InputObject (Get-Metric -InputObject $Objects -Keys $Keys) -ErrorCode $ErrorCode;
    }
    # Get-Metric can return an array of objects. In this case need to take each item and add its to $r
    'Sum' {
