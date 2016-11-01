@@ -519,7 +519,7 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
             If ($Null -Eq $CSV) { Continue; }
             Add-Member -InputObject $CSV -MemberType NoteProperty -Name "Cluster" -Value $Cluster.Name;
             Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FriendlyVolumeName" -Value ($($CSV.SharedVolumeInfo).FriendlyVolumeName);
-            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FileSystem" -Value ($($CSV.SharedVolumeInfo.Partition).FileSystem);
+            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FileSystem" -Value ($($($CSV.SharedVolumeInfo).Partition).FileSystem);
             If (($OSVersion -As [OSVersion]) -Ge [OSVersion]::v63) {
                $CSVState = Get-ClusterSharedVolumeState -InputObject $CSV;
                Add-Member -InputObject $CSV -MemberType NoteProperty -Name "StateInfo" -Value $CSVState.StateInfo;
@@ -605,13 +605,7 @@ switch ($Action) {
           'ClusterResourceIPAddress'      { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE", "ADDRESS"); }
           'ClusterResourceVirtualMachineConfiguration' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterAvailableDisk'          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
-          'ClusterSharedVolume'           { $ObjectProperties =  $(If (($OSVersion -As [OSVersion]) -Lt [OSVersion]::v63) {
-                                                # Win Server release less that 2012 haven't some props
-                                                      @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME"); 
-                                                } else {
-                                                      @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME", "FILESYSTEM"); 
-                                                }); 
-                                           }
+          'ClusterSharedVolume'           { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME", "FILESYSTEM"); }
        }  
        Write-Verbose "$(Get-Date) Generating LLD JSON";
        $Result =  Make-JSON -InputObject $Objects -ObjectProperties $ObjectProperties -Pretty;
