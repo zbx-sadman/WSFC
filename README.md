@@ -1,7 +1,7 @@
 ## WSFC Miner 
 This is a little Powershell script help to fetch metric's values from Windows Server Failover Cluster (WSFC).
 
-Actual release 1.2.0
+Actual release 1.2.1
 
 Tested on:
 - Production mode: Windows Server 2008 R2 SP1, Powershell 2;
