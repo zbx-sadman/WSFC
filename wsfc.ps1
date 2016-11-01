@@ -6,7 +6,7 @@
         Return Microsoft Server Failover Cluster's metrics value, sum & count selected objects, make LLD-JSON for Zabbix
 
     .NOTES  
-        Version: 1.2.0
+        Version: 1.2.1
         Name: WSFC Miner
         Author: zbx.sadman@gmail.com
         DateCreated: 23MAR2016
@@ -605,7 +605,13 @@ switch ($Action) {
           'ClusterResourceIPAddress'      { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE", "ADDRESS"); }
           'ClusterResourceVirtualMachineConfiguration' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterAvailableDisk'          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
-          'ClusterSharedVolume'           { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME", "FILESYSTEM"); }
+          'ClusterSharedVolume'           { $ObjectProperties =  $(If (($OSVersion -As [OSVersion]) -Lt [OSVersion]::v63) {
+                                                # Win Server release less that 2012 haven't some props
+                                                      @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME"); 
+                                                } else {
+                                                      @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME", "FILESYSTEM"); 
+                                                }); 
+                                           }
        }  
        Write-Verbose "$(Get-Date) Generating LLD JSON";
        $Result =  Make-JSON -InputObject $Objects -ObjectProperties $ObjectProperties -Pretty;
