@@ -80,9 +80,7 @@ I recommend start use WSFC Miner as non-clustered service, tune it with Zabbix a
 8. Enjoy.
 
 ####Use as failover Generic Service
-1. If you want use local (non-clustered) and failiver (clustered) Zabbix Agent at the same time - you must to change Zabbix Agent's directive ListenIP from
-   _0.0.0.0_ to unique interface address. Otherwise you can sometime get error 1067 when clustered Zabbix Agent will migrate. This is due first started 
-   instance of Agent bind to all available addresses and second instance just exit when started;
+1. If you want use local (non-clustered) and failover (clustered) Zabbix Agent at the same time - you must to change Zabbix Agent's directive ListenPort in "clustered agent" config from default to another unused (may be 16092 or so). Otherwise you can sometime get error 1067 when clustered Zabbix Agent will migrate. This is due first started instance of Agent bind to all available host's addresses and second instance just exit when started;
 2. Create copy of Zabbix Agent config (call it _zabbix\_agentd\_WSFC-A.conf_ for example) on the one cluster node; 
 3. Include [zbx_wsfc.conf](https://github.com/zbx-sadman/WSFC/tree/master/Zabbix_Templates/zbx_wsfc.conf) to Zabbix Agent config, if you have not done this before;
 4. Choose new IP-address and domain name for using with Generic Service. It's should not be Cluster's IP and Hostname. 
