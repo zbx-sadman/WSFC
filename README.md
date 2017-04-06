@@ -44,7 +44,7 @@ Actions
 - _Count_     - Count collection items.
 
 
-###How to use standalone
+### How to use standalone
 
     # Get Cluster name
     powershell -NoProfile -ExecutionPolicy "RemoteSigned" -File "wsfc.ps1" -Action "Get" -ObjectType "Cluster" -Key "Name" -Id "f4479814-35d4-41c5-babd-c0697769ac31"
@@ -63,7 +63,7 @@ Actions
 
 
 
-###How to use with Zabbix
+### How to use with Zabbix
 I recommend start use WSFC Miner as non-clustered service, tune it with Zabbix and make its clustered then.
 
 ####Use as non-clustered Service
@@ -79,7 +79,7 @@ I recommend start use WSFC Miner as non-clustered service, tune it with Zabbix a
 7. Pray and link template;
 8. Enjoy.
 
-####Use as failover Generic Service
+#### Use as failover Generic Service
 1. If you want use local (non-clustered) and failover (clustered) Zabbix Agent at the same time - you must to change Zabbix Agent's directive ListenPort in "clustered agent" config from default to another unused (may be 16092 or so). Otherwise you can sometime get error 1067 when clustered Zabbix Agent will migrate. This is due first started instance of Agent bind to all available host's addresses and second instance just exit when started;
 2. Create copy of Zabbix Agent config (call it _zabbix\_agentd\_WSFC-A.conf_ for example) on the one cluster node; 
 3. Include [zbx_wsfc.conf](https://github.com/zbx-sadman/WSFC/tree/master/Zabbix_Templates/zbx_wsfc.conf) to Zabbix Agent config, if you have not done this before;
@@ -108,7 +108,7 @@ Do not try import Zabbix v2.4 template to Zabbix _pre_ v2.4. You need to edit .x
 **Note**
 In template used Item's type _Zabbix Agent (active)_. You must set up _ServerActive_ directive of Zabbix Agent or change Item's type to _Zabbix Agent_. In this case number of pollers of Zabbix Server must be increased, because any run of PowerShell script will freeze poller thread to 2 sec (on my hardware).
 
-###Hints
+### Hints
 - To see keys, run script without **-Key** option: 
   _... "wsfc.ps1" -Action "Get" -Object "**Object**"_ \[-Key "{SummaryInformation.VirtualMachine | ClusterParameter}"\]. 
   Note that not all objects have related metrics in ClusterParameter & SummaryInformation tables (try use this keys with 'ClusterResourceVirtualMachine' object for test). 
