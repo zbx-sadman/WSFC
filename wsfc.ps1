@@ -6,7 +6,7 @@
         Return Microsoft Server Failover Cluster's metrics value, sum & count selected objects, make LLD-JSON for Zabbix
 
     .NOTES  
-        Version: 1.2.1
+        Version: 1.2.2
         Name: WSFC Miner
         Author: zbx.sadman@gmail.com
         DateCreated: 23MAR2016
@@ -143,8 +143,8 @@ Set-Variable -Option Constant -Name "RES_IA"  -Value 'IP Address'
 Set-Variable -Option Constant -Name "RES_VMC" -Value 'Virtual Machine Configuration'
 
 # Enumerate OS versions. [int][OSVersions]::DumpVer equal 0 due [int][OSVersions]::AnyNonexistItem equal 0 too
-#Add-Type -TypeDefinition "public enum OSVersion { DumpVer, WS2008, WS2008R2, WS2012, WS2012R2}";
-Add-Type -TypeDefinition "public enum OSVersion { DumpVer, v60, v61, v62, v63}";
+#Add-Type -TypeDefinition "public enum OSVersion { DumpVer, WS2008, WS2008R2, WS2012, WS2012R2, WS2016}";
+Add-Type -TypeDefinition "public enum OSVersion { DumpVer, v60, v61, v62, v63, v100}";
 
 ####################################################################################################################################
 #
@@ -425,6 +425,10 @@ $OSName = $( Switch ($OSVersion -As [OSVersion]) {
    'v63' { # Windows 8.1 / Windows Server 2012 R2
        Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization\v2' 
        "Windows 8.1 / Windows Server 2012 R2"
+   }
+   'v100' { # Windows 10 / Windows Server 2016 
+       Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization\v2' 
+       "Windows 10 / Windows Server 2016"
    }
    Default { # Incompatible OS version
       Exit-WithMessage -Message "Incompatible OS version" -ErrorCode $ErrorCode;
