@@ -1,11 +1,13 @@
 ## WSFC Miner 
 This is a little Powershell script help to fetch metric's values from Windows Server Failover Cluster (WSFC).
 
-Actual release 1.2.2
+Actual release 1.2.3
 
 Tested on:
 - Production mode: Windows Server 2008 R2 SP1, Powershell 2;
-- Non-production mode: Windows Server 2012 R2, Powershell 4.
+- Non-production mode: Windows Server 2012 R2, Powershell 4;
+- Non-production mode: Windows Server 2016, Powershell 5.1.
+
  
 Supported objects:
 
@@ -21,6 +23,8 @@ Supported objects:
 - _ClusterResourceIPAddress_ - WSFC resource 'IP Address';
 - _ClusterResourceNetworkName_ - WSFC resource 'Network Name';
 - _ClusterResourcePhysicalDisk_ - WSFC resource 'Physical Disk';
+- _ClusterResourceSQLServer_ - WSFC resource 'SQL Server';
+- _ClusterResourceSQLServerAgent_ - WSFC resource 'SQL Server Agent';
 - _ClusterSharedVolume_ - WSFC Shared Volumes;
 - _ClusterQuorum_ - WSFC cluster's quorum.
 

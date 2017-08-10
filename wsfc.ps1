@@ -6,7 +6,7 @@
         Return Microsoft Server Failover Cluster's metrics value, sum & count selected objects, make LLD-JSON for Zabbix
 
     .NOTES  
-        Version: 1.2.2
+        Version: 1.2.3
         Name: WSFC Miner
         Author: zbx.sadman@gmail.com
         DateCreated: 23MAR2016
@@ -36,6 +36,8 @@
             ClusterResourceIPAddress - failover cluster's resource 'IP Address';
             ClusterResourceNetworkName - failover cluster's resource 'Network Name';
             ClusterResourcePhysicalDisk - failover cluster's resource 'Physical Disk';
+            ClusterResourceSQLServer - failover cluster's resource 'SQL Server';
+            ClusterResourceSQLServerAgent - failover cluster's resource 'SQL Server Agent';
             ClusterAvailableDisk - failover cluster's disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.
             ClusterSharedVolume - failover cluster's Cluster Shared Volume;
             ClusterQuorum - failover cluster's quorum;
@@ -112,7 +114,7 @@ Param (
    [Parameter(Mandatory = $False)]
    [ValidateSet('Cluster', 'ClusterNode', 'ClusterNetwork', 'ClusterNetworkInterface', 'ClusterResourceDHCPService', 'ClusterResourceGenericService', 
                 'ClusterResourceVirtualMachine', 'ClusterResourceVirtualMachineConfiguration', 'ClusterResourceNetworkName', 'ClusterResourceIPAddress', 
-                'ClusterResourcePhysicalDisk', 'ClusterAvailableDisk', 'ClusterSharedVolume')]
+                'ClusterResourcePhysicalDisk', 'ClusterResourceSQLServer', 'ClusterResourceSQLServerAgent', 'ClusterAvailableDisk', 'ClusterSharedVolume')]
    [Alias('Object')]
    [String]$ObjectType,
    [Parameter(Mandatory = $False)]
@@ -134,13 +136,15 @@ Param (
 # Width of console to stop breaking JSON lines
 Set-Variable -Option Constant -Name "CONSOLE_WIDTH" -Value 512
 
-Set-Variable -Option Constant -Name "RES_DHCPS"  -Value 'DHCP Service'
-Set-Variable -Option Constant -Name "RES_VM"  -Value 'Virtual Machine'
-Set-Variable -Option Constant -Name "RES_GS"  -Value 'Generic Service'
-Set-Variable -Option Constant -Name "RES_PD"  -Value 'Physical Disk'
-Set-Variable -Option Constant -Name "RES_NN"  -Value 'Network Name'
-Set-Variable -Option Constant -Name "RES_IA"  -Value 'IP Address'
-Set-Variable -Option Constant -Name "RES_VMC" -Value 'Virtual Machine Configuration'
+Set-Variable -Option Constant -Name "RES_DHCPS"      -Value 'DHCP Service'
+Set-Variable -Option Constant -Name "RES_VM"         -Value 'Virtual Machine'
+Set-Variable -Option Constant -Name "RES_GS"         -Value 'Generic Service'
+Set-Variable -Option Constant -Name "RES_PD"         -Value 'Physical Disk'
+Set-Variable -Option Constant -Name "RES_NN"         -Value 'Network Name'
+Set-Variable -Option Constant -Name "RES_IA"         -Value 'IP Address'
+Set-Variable -Option Constant -Name "RES_VMC"        -Value 'Virtual Machine Configuration'
+Set-Variable -Option Constant -Name "RES_SQLSRV"     -Value 'SQL Server'
+Set-Variable -Option Constant -Name "RES_SQLSRVAGNT" -Value 'SQL Server Agent'
 
 # Enumerate OS versions. [int][OSVersions]::DumpVer equal 0 due [int][OSVersions]::AnyNonexistItem equal 0 too
 #Add-Type -TypeDefinition "public enum OSVersion { DumpVer, WS2008, WS2008R2, WS2012, WS2012R2, WS2016}";
@@ -426,7 +430,7 @@ $OSName = $( Switch ($OSVersion -As [OSVersion]) {
        Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization\v2' 
        "Windows 8.1 / Windows Server 2012 R2"
    }
-   'v100' { # Windows 10 / Windows Server 2016 
+   'v100' { # Windows 10 / Windows Server 2016
        Set-Variable -Option Constant -Name "NS_HYPERV" -Value 'root\virtualization\v2' 
        "Windows 10 / Windows Server 2016"
    }
@@ -508,7 +512,25 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
          ForEach ($IPAddress in $IPAddresses) {
             If ($Null -Eq $IPAddress) { Continue; }
             Add-Member -InputObject $IPAddress -MemberType NoteProperty -Name "Address" -Value (Get-ClusterParameter -InputObject $IPAddress -Name 'Address').Value;
-            $IPAddresses
+            $IPAddress
+         }
+     }
+     'ClusterResourceSQLServer'{
+         $SQLServers = PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_SQLSRV) -Property ID -Value $Id
+         ForEach ($SQLServer in $SQLServers) {
+            If ($Null -Eq $SQLServer) { Continue; }
+            #Add-Member -InputObject $SQLServer -MemberType NoteProperty -Name "VirtualServerName" -Value (Get-ClusterParameter -InputObject $SQLServer -Name 'VirtualServerName').Value;
+            Add-Member -InputObject $SQLServer -MemberType NoteProperty -Name "InstanceName" -Value (Get-ClusterParameter -InputObject $SQLServer -Name 'InstanceName').Value;
+            $SQLServer
+         }
+     }
+     'ClusterResourceSQLServerAgent'{
+         $SQLServerAgents = PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_SQLSRVAGNT) -Property ID -Value $Id
+         ForEach ($SQLServerAgent in $SQLServerAgents) {
+            If ($Null -Eq $SQLServerAgent) { Continue; }
+            #Add-Member -InputObject $SQLServerAgent -MemberType NoteProperty -Name "VirtualServerName" -Value (Get-ClusterParameter -InputObject $SQLServerAgent -Name 'VirtualServerName').Value;
+            Add-Member -InputObject $SQLServerAgent -MemberType NoteProperty -Name "InstanceName" -Value (Get-ClusterParameter -InputObject $SQLServerAgent -Name 'InstanceName').Value;
+            $SQLServerAgent
          }
      }
      'ClusterResourceVirtualMachineConfiguration' {
@@ -607,6 +629,8 @@ switch ($Action) {
           'ClusterResourcePhysicalDisk'   { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourceNetworkName'    { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterResourceIPAddress'      { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE", "ADDRESS"); }
+          'ClusterResourceSQLServer'      { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE", "INSTANCENAME"); }
+          'ClusterResourceSQLServerAgent' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE", "INSTANCENAME"); }
           'ClusterResourceVirtualMachineConfiguration' { $ObjectProperties = @("ID", "CLUSTER", "OWNERGROUP", "OWNERNODE", "NAME", "STATE"); }
           'ClusterAvailableDisk'          { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "ROLE"); }
           'ClusterSharedVolume'           { $ObjectProperties = @("ID", "CLUSTER", "NAME", "STATE", "FRIENDLYVOLUMENAME", "FILESYSTEM"); }
