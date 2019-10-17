@@ -410,7 +410,7 @@ Function Get-ClusterResourceList {
          ForEach ($ClusterResource in $ClusterResources) {
             $ClusterParameters = Get-ClusterParameter -InputObject $ClusterResource;
             ForEach ($ClusterParameter in $ClusterParameters) {
-              Add-Member -InputObject $ClusterResource -Force -MemberType NoteProperty -Name $ClusterParameter.Name -Value $ClusterParameter.Value;
+              Add-Member -Force -InputObject $ClusterResource -MemberType NoteProperty -Name $ClusterParameter.Name -Value $ClusterParameter.Value;
             }
          } # ForEach ($ClusterResource in $ClusterResources)
          # Return Resource list
@@ -533,7 +533,7 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
             If ($Null -Eq $ClusterNetwork) { Continue; }
             ForEach ($ClusterNetworkInterface in (Get-ClusterNetworkInterface -Network $ClusterNetwork.Name)) {
                If ($Null -Eq $ClusterNetworkInterface) { Continue; }
-               Add-Member -InputObject $ClusterNetworkInterface -MemberType NoteProperty -Name "NetworkAddress" -Value $ClusterNetwork.Address;
+               Add-Member -Force -InputObject $ClusterNetworkInterface -MemberType NoteProperty -Name "NetworkAddress" -Value $ClusterNetwork.Address;
                # Split IPv6 Address & Zone index by % sign
                $Address, $IPv6ZoneIndex = $ClusterNetworkInterface.Address.ToString().Split('%')
                Add-Member -Force -InputObject $ClusterNetworkInterface -MemberType NoteProperty -Name "Address" -Value $Address;
@@ -561,7 +561,7 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
          $IPAddresses = PropertyEqualOrAny -InputObject (Get-ClusterResourceList -InputObject $Cluster -ResourceType $RES_IA) -Property ID -Value $Id
          ForEach ($IPAddress in $IPAddresses) {
             If ($Null -Eq $IPAddress) { Continue; }
-            Add-Member -InputObject $IPAddress -MemberType NoteProperty -Name "Address" -Value (Get-ClusterParameter -InputObject $IPAddress -Name 'Address').Value;
+            Add-Member -Force -InputObject $IPAddress -MemberType NoteProperty -Name "Address" -Value (Get-ClusterParameter -InputObject $IPAddress -Name 'Address').Value;
             $IPAddress
          }
      }
@@ -570,7 +570,7 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
          ForEach ($SQLServer in $SQLServers) {
             If ($Null -Eq $SQLServer) { Continue; }
             #Add-Member -InputObject $SQLServer -MemberType NoteProperty -Name "VirtualServerName" -Value (Get-ClusterParameter -InputObject $SQLServer -Name 'VirtualServerName').Value;
-            Add-Member -InputObject $SQLServer -MemberType NoteProperty -Name "InstanceName" -Value (Get-ClusterParameter -InputObject $SQLServer -Name 'InstanceName').Value;
+            Add-Member -Force -InputObject $SQLServer -MemberType NoteProperty -Name "InstanceName" -Value (Get-ClusterParameter -InputObject $SQLServer -Name 'InstanceName').Value;
             $SQLServer
          }
      }
@@ -579,7 +579,7 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
          ForEach ($SQLServerAgent in $SQLServerAgents) {
             If ($Null -Eq $SQLServerAgent) { Continue; }
             #Add-Member -InputObject $SQLServerAgent -MemberType NoteProperty -Name "VirtualServerName" -Value (Get-ClusterParameter -InputObject $SQLServerAgent -Name 'VirtualServerName').Value;
-            Add-Member -InputObject $SQLServerAgent -MemberType NoteProperty -Name "InstanceName" -Value (Get-ClusterParameter -InputObject $SQLServerAgent -Name 'InstanceName').Value;
+            Add-Member -Force -InputObject $SQLServerAgent -MemberType NoteProperty -Name "InstanceName" -Value (Get-ClusterParameter -InputObject $SQLServerAgent -Name 'InstanceName').Value;
             $SQLServerAgent
          }
      }
@@ -593,14 +593,14 @@ $Objects = $( ForEach ($Cluster in $Clusters) {
          $CSVs = PropertyEqualOrAny -InputObject (Get-ClusterSharedVolume -InputObject $Cluster) -Property ID -Value $Id
          ForEach ($CSV in $CSVs) {  
             If ($Null -Eq $CSV) { Continue; }
-            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "Cluster" -Value $Cluster.Name;
-            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FriendlyVolumeName" -Value ($($CSV.SharedVolumeInfo).FriendlyVolumeName);
-            Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FileSystem" -Value ($($($CSV.SharedVolumeInfo).Partition).FileSystem);
+            Add-Member -Force -InputObject $CSV -MemberType NoteProperty -Name "Cluster" -Value $Cluster.Name;
+            Add-Member -Force -InputObject $CSV -MemberType NoteProperty -Name "FriendlyVolumeName" -Value ($($CSV.SharedVolumeInfo).FriendlyVolumeName);
+            Add-Member -Force -InputObject $CSV -MemberType NoteProperty -Name "FileSystem" -Value ($($($CSV.SharedVolumeInfo).Partition).FileSystem);
             If (($OSVersion -As [OSVersion]) -Ge [OSVersion]::v63) {
                $CSVState = Get-ClusterSharedVolumeState -InputObject $CSV;
-               Add-Member -InputObject $CSV -MemberType NoteProperty -Name "StateInfo" -Value $CSVState.StateInfo;
-               Add-Member -InputObject $CSV -MemberType NoteProperty -Name "FileSystemRedirectedIOReason" -Value $CSVState.FileSystemRedirectedIOReason;
-               Add-Member -InputObject $CSV -MemberType NoteProperty -Name "BlockRedirectedIOReason" -Value $CSVState.BlockRedirectedIOReason;
+               Add-Member -Force -InputObject $CSV -MemberType NoteProperty -Name "StateInfo" -Value $CSVState.StateInfo;
+               Add-Member -Force -InputObject $CSV -MemberType NoteProperty -Name "FileSystemRedirectedIOReason" -Value $CSVState.FileSystemRedirectedIOReason;
+               Add-Member -Force -InputObject $CSV -MemberType NoteProperty -Name "BlockRedirectedIOReason" -Value $CSVState.BlockRedirectedIOReason;
             }
             $CSV
          }
@@ -654,7 +654,7 @@ $Objects = $(
                $ClusterParameterValue = (Get-ClusterParameter -InputObject $Object -Name $Keys[1]).Value;
                # Need to use prefix to make unique property?
                # $Keys[1] = "__$($Keys[1])"
-               Add-Member -InputObject $Object -MemberType NoteProperty -Name $Keys[1] -Value $ClusterParameterValue;
+               Add-Member -Force -InputObject $Object -MemberType NoteProperty -Name $Keys[1] -Value $ClusterParameterValue;
                $Object;
             } else {
                Get-ClusterParameter -InputObject $Object;
